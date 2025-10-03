@@ -1,0 +1,33 @@
+---
+title: "Events"
+description: "Handle conversation lifecycle events."
+---
+
+Your agent can react to events that occur during the conversation lifecycle. This is done by implementing callback methods in your agent class.
+
+Here are the available callback methods:
+
+- `on_conversation_started(conversation_id: str)`
+- `on_conversation_ended(conversation_id: str)`
+- `on_tool_called(tool_call)`
+- `on_tool_completed(call_id, result)`
+- `on_error(error_type: str, message: str, details: dict)`
+
+Here is an example of an agent with event callbacks:
+
+```python
+class MyAgent(ConversimpleAgent):
+    def on_conversation_started(self, conversation_id: str):
+        print(f"🎤 Conversation started: {conversation_id}")
+    
+    def on_conversation_ended(self, conversation_id: str):
+        print(f"📞 Conversation ended: {conversation_id}")
+    
+    def on_tool_called(self, tool_call):
+        print(f"🔧 Executing tool: {tool_call.tool_name}")
+    
+    def on_error(self, error_type: str, message: str, details: dict):
+        print(f"❌ Error ({error_type}): {message}")
+```
+
+You can use these callbacks to manage state, log events, or perform any other actions in response to the conversation's progress.

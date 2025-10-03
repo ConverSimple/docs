@@ -1,0 +1,50 @@
+---
+title: "ConversimpleAgent"
+description: "The main class for creating Conversimple agents."
+---
+
+The `ConversimpleAgent` class is the main entry point for creating your agent. It handles the connection to the Conversimple platform, tool registration, and event handling.
+
+## Initialization
+
+```python
+class ConversimpleAgent:
+    def __init__(
+        self,
+        api_key: str,
+        customer_id: Optional[str] = None,
+        platform_url: str = "ws://localhost:4000/sdk/websocket"
+    ):
+```
+
+<ParamField path="api_key" type="str" required>
+  Your Conversimple API key.
+</ParamField>
+<ParamField path="customer_id" type="str">
+  Your customer ID. If not provided, it will be derived from the API key.
+</ParamField>
+<ParamField path="platform_url" type="str">
+  The URL of the Conversimple platform WebSocket.
+</ParamField>
+
+## Methods
+
+### `start()`
+
+Starts the agent and connects to the platform.
+
+```python
+async def start(self, conversation_id: Optional[str] = None) -> None:
+```
+
+<ParamField path="conversation_id" type="str">
+  A unique ID for the conversation. If not provided, a new one will be generated.
+</ParamField>
+
+### `stop()`
+
+Stops the agent and disconnects from the platform.
+
+```python
+async def stop(self) -> None:
+```

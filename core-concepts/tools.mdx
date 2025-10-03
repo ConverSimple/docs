@@ -1,0 +1,45 @@
+---
+title: "Tools"
+description: "Define and register tools for your agent."
+---
+
+Tools are functions that your agent can execute during a conversation. You can define tools to interact with external services, databases, or any other APIs.
+
+## Decorators
+
+The Conversimple SDK provides two decorators for registering tools:
+
+- `@tool`: For synchronous functions.
+- `@tool_async`: For asynchronous (async/await) functions.
+
+Here is an example of a class with both a sync and an async tool:
+
+```python
+from conversimple import tool, tool_async
+
+class BusinessAgent(ConversimpleAgent):
+    @tool("Look up customer information")
+    def lookup_customer(self, customer_id: str) -> dict:
+        # Synchronous tool execution
+        return customer_database.get(customer_id)
+    
+    @tool_async("Send email notification")
+    async def send_email(self, email: str, subject: str, body: str) -> dict:
+        # Asynchronous tool execution
+        result = await email_service.send(email, subject, body)
+        return {"sent": True, "message_id": result.id}
+```
+
+## Type Hinting
+
+The SDK automatically generates a JSON schema for your tools based on Python type hints. This allows the Conversimple platform to understand the parameters your tools expect.
+
+The following types are supported:
+
+- `str`
+- `int`
+- `float`
+- `bool`
+- `list`
+- `dict`
+- `Optional[T]`

@@ -1,0 +1,75 @@
+---
+title: "Tool Decorators"
+description: "Decorators for registering synchronous and asynchronous tools."
+---
+
+The Conversimple SDK provides decorators to easily register your functions as tools that the AI agent can call during a conversation.
+
+## `@tool`
+
+Use the `@tool` decorator for synchronous functions.
+
+```python
+from conversimple import tool
+
+class MyAgent(ConversimpleAgent):
+    @tool("Get current weather for a location")
+    def get_weather(self, location: str) -> dict:
+        """
+        Get weather information for a specified location.
+        
+        Args:
+            location: City name or location string
+            
+        Returns:
+            Dictionary with weather information
+        """
+        return {"location": location, "temperature": 72, "condition": "sunny"}
+```
+
+<ParamField path="description" type="str" required>
+  A clear and concise description of what the tool does. This description is used by the AI to understand when to call your tool.
+</ParamField>
+
+## `@tool_async`
+
+Use the `@tool_async` decorator for asynchronous functions. These functions should be `async` and `await` any asynchronous operations.
+
+```python
+from conversimple import tool_async
+
+class MyAgent(ConversimpleAgent):
+    @tool_async("Fetch user data from an external API")
+    async def fetch_user_data(self, user_id: str) -> dict:
+        """
+        Fetches user data from an external API.
+        
+        Args:
+            user_id: The ID of the user to fetch.
+            
+        Returns:
+            A dictionary containing user data.
+        """
+        await asyncio.sleep(0.05) # Simulate an async API call
+        return {"user_id": user_id, "name": "John Doe", "email": "john.doe@example.com"}
+```
+
+<ParamField path="description" type="str" required>
+  A clear and concise description of what the asynchronous tool does. This description is used by the AI to understand when to call your tool.
+</ParamField>
+
+## Type Hinting and JSON Schema Generation
+
+The SDK automatically generates JSON schemas for your tool parameters and return types based on Python type hints. This allows the Conversimple platform to understand the expected inputs and outputs of your tools.
+
+Supported types include:
+
+- `str` (maps to `"type": "string"`)
+- `int` (maps to `"type": "integer"`)
+- `float` (maps to `"type": "number"`)
+- `bool` (maps to `"type": "boolean"`)
+- `list` (maps to `"type": "array"`)
+- `dict` (maps to `"type": "object"`)
+- `Optional[T]` (e.g., `Optional[str]` will be treated as `str` but marked as nullable in the schema)
+
+Parameters without default values are considered `required` in the generated schema.

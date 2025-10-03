@@ -1,0 +1,95 @@
+---
+title: "Event Callbacks"
+description: "Methods for handling conversation lifecycle and tool events."
+---
+
+The `ConversimpleAgent` provides several callback methods that you can override in your agent class to react to different events during a conversation.
+
+## Callback Methods
+
+### `on_conversation_started(conversation_id: str)`
+
+Called when a new conversation starts.
+
+```python
+def on_conversation_started(self, conversation_id: str) -> None:
+    print(f"Conversation started: {conversation_id}")
+```
+
+<ParamField path="conversation_id" type="str" required>
+  The unique identifier for the started conversation.
+</ParamField>
+
+### `on_conversation_ended(conversation_id: str)`
+
+Called when a conversation ends.
+
+```python
+def on_conversation_ended(self, conversation_id: str) -> None:
+    print(f"Conversation ended: {conversation_id}")
+```
+
+<ParamField path="conversation_id" type="str" required>
+  The unique identifier for the ended conversation.
+</ParamField>
+
+### `on_tool_called(tool_call)`
+
+Called when the platform requests your agent to execute a tool.
+
+```python
+def on_tool_called(self, tool_call) -> None:
+    print(f"Executing tool: {tool_call.tool_name}")
+```
+
+<ParamField path="tool_call" type="conversimple.tools.ToolCall" required>
+  An object containing details about the tool call, including `call_id`, `tool_name`, `arguments`, and `conversation_id`.
+</ParamField>
+
+### `on_tool_completed(call_id: str, result: Any)`
+
+Called after a tool execution has successfully completed and its result has been sent to the platform.
+
+```python
+def on_tool_completed(self, call_id: str, result: Any) -> None:
+    print(f"Tool {call_id} completed with result: {result}")
+```
+
+<ParamField path="call_id" type="str" required>
+  The unique identifier of the tool call.
+</ParamField>
+<ParamField path="result" type="Any" required>
+  The result returned by the executed tool.
+</ParamField>
+
+### `on_error(error_type: str, message: str, details: dict)`
+
+Called when an error occurs within the agent or is reported by the platform.
+
+```python
+def on_error(self, error_type: str, message: str, details: dict) -> None:
+    print(f"Error ({error_type}): {message}")
+```
+
+<ParamField path="error_type" type="str" required>
+  The type of error (e.g., `connection_error`, `tool_execution_error`).
+</ParamField>
+<ParamField path="message" type="str" required>
+  A descriptive error message.
+</ParamField>
+<ParamField path="details" type="dict" required>
+  A dictionary containing additional error details.
+</ParamField>
+
+### `on_config_update(config: Dict[str, Any])`
+
+Called when the agent receives a configuration update from the platform.
+
+```python
+def on_config_update(self, config: Dict[str, Any]) -> None:
+    print(f"Configuration updated: {config}")
+```
+
+<ParamField path="config" type="Dict[str, Any]" required>
+  A dictionary containing the updated configuration.
+</ParamField>

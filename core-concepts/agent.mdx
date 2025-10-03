@@ -1,0 +1,26 @@
+---
+title: "The Agent"
+description: "Learn about the ConversimpleAgent session model."
+---
+
+Each `ConversimpleAgent` instance handles a single conversation session. For multiple concurrent conversations, you should create multiple agent instances. This one-to-one mapping ensures that conversation state is managed cleanly and that each conversation has its own isolated process.
+
+## Agent Lifecycle
+
+The lifecycle of an agent is straightforward:
+
+1.  **Initialization**: You create an instance of your agent class, which inherits from `ConversimpleAgent`.
+2.  **Connection**: The `agent.start()` method establishes a WebSocket connection to the Conversimple platform.
+3.  **Ready**: The agent is ready to handle a conversation.
+4.  **Termination**: The `agent.stop()` method disconnects the agent from the platform.
+
+Here is an example of how to manage agent instances for multiple conversations:
+
+```python
+# Per-conversation agent instances
+async def handle_conversation(conversation_id):
+    agent = MyAgent(api_key=api_key, customer_id=customer_id)
+    await agent.start(conversation_id=conversation_id)
+```
+
+This model of one agent per conversation is recommended for most use cases and simplifies state management.
