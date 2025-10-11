@@ -1,0 +1,150 @@
+---
+title: "FAQ"
+description: "Frequently asked questions about Conversimple agents."
+---
+
+## General Questions
+
+### What is Conversimple?
+
+Conversimple is a platform for building voice AI agents. It handles WebRTC infrastructure, audio processing, and conversation management, so you can focus on building your agent's logic.
+
+### How much does it cost?
+
+Check our [pricing page](https://conversimple.com/pricing) for current plans.
+
+### Which AI providers are supported?
+
+Currently Gemini is supported. OpenAI, Deepgram, and other providers are coming soon.
+
+## Getting Started
+
+### How do I get API credentials?
+
+1. Sign up at [app.conversimple.com](https://app.conversimple.com)
+2. Navigate to Settings → API Keys
+3. Generate new API key
+4. Copy your customer ID
+
+### What programming languages are supported?
+
+Currently Python 3.8+. More SDKs coming soon.
+
+### Can I use this in production?
+
+Yes! Many customers use Conversimple in production.
+
+## Technical Questions
+
+### How many conversations can one agent handle?
+
+One agent instance handles one conversation. For multiple conversations, create multiple agent instances. See [Multi-Conversation Management](/guides/multi-conversation-management).
+
+### How do I handle errors?
+
+Implement the `on_error` callback in your agent. See [Error Handling](/core-concepts/error-handling).
+
+### Can tools call other tools?
+
+No, only the AI can call tools. Tools cannot directly call other tools.
+
+### How long can conversations last?
+
+Conversations can last up to 1 hour by default. Contact support for longer conversations.
+
+### What's the maximum tool execution time?
+
+Tools should complete within 10 seconds. For longer operations, return immediately and notify the user asynchronously.
+
+## Voice & Audio
+
+### What audio formats are supported?
+
+The platform handles all audio processing. Audio is delivered to your tools as transcribed text.
+
+### Can users interrupt the AI?
+
+Yes, Conversimple supports natural interruptions.
+
+### What languages are supported?
+
+Currently English. More languages coming soon.
+
+## Development
+
+### How do I test my agent?
+
+See [Testing Your Agent](/guides/testing-your-agent) for testing strategies.
+
+### Can I use environment variables?
+
+Yes, recommended. See [Authentication](/core-concepts/authentication).
+
+### How do I debug issues?
+
+Enable debug logging and check [Debugging Guide](/guides/debugging).
+
+## Deployment
+
+### Where can I deploy my agent?
+
+Anywhere Python runs: Docker, Kubernetes, VPS, serverless platforms.
+
+### How do I handle high traffic?
+
+Scale horizontally by running multiple instances. See [Scaling Guide](/guides/scaling).
+
+### Is auto-scaling supported?
+
+Yes, works with Kubernetes HPA and similar tools.
+
+## Security
+
+### How are API keys secured?
+
+Use environment variables and never commit keys to version control. See [Security Guide](/guides/security).
+
+### Is data encrypted?
+
+Yes, all connections use TLS/WSS encryption.
+
+### Can I use my own database?
+
+Yes, your agent can connect to any database or service.
+
+## Billing
+
+### How is usage calculated?
+
+Based on conversation minutes and AI provider costs.
+
+### Are there rate limits?
+
+Yes, varies by plan. See documentation for details.
+
+### Can I get a refund?
+
+See our terms of service for refund policy.
+
+## Support
+
+### How do I get help?
+
+- Check documentation
+- Email support@conversimple.com
+- Join our community
+
+### Where do I report bugs?
+
+Email support@conversimple.com with details and logs.
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Quickstart" icon="rocket" href="/quickstart">
+    Build your first agent
+  </Card>
+  <Card title="Examples" icon="code" href="/examples/simple-agent">
+    See example agents
+  </Card>
+</CardGroup>

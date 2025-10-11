@@ -1,0 +1,330 @@
+---
+title: "Use Cases"
+description: "Discover what you can build with Conversimple's voice AI platform."
+---
+
+## Overview
+
+Conversimple enables a wide range of voice-powered applications across industries. From customer service to healthcare, the platform provides the infrastructure you need to build engaging voice experiences.
+
+## Customer Service & Support
+
+### Automated Customer Support
+
+Replace or augment traditional call centers with AI-powered voice agents that can:
+
+- Answer frequently asked questions
+- Look up order status and account information
+- Process returns and refunds
+- Escalate complex issues to human agents
+- Operate 24/7 without breaks
+
+**Example Tools:**
+```python
+@tool("Look up customer order")
+def get_order_status(self, order_id: str) -> dict:
+    return {"status": "shipped", "tracking": "ABC123"}
+
+@tool("Process refund")
+def process_refund(self, order_id: str, reason: str) -> dict:
+    return {"refund_id": "REF456", "amount": 49.99}
+```
+
+**Benefits:**
+- Reduce wait times from minutes to seconds
+- Handle multiple conversations simultaneously
+- Consistent service quality
+- Lower operational costs
+
+### Technical Support
+
+Provide voice-enabled technical assistance:
+
+- Troubleshoot common issues
+- Guide users through setup processes
+- Create support tickets
+- Schedule technician visits
+
+**Example:**
+```python
+@tool("Run diagnostics")
+def run_diagnostics(self, device_id: str) -> dict:
+    return {"status": "warning", "issue": "Low memory"}
+
+@tool("Schedule technician")
+def schedule_visit(self, date: str, time: str) -> dict:
+    return {"appointment_id": "APPT789", "technician": "John"}
+```
+
+## Booking & Reservations
+
+### Restaurant Reservations
+
+Enable customers to book tables through natural voice conversations:
+
+- Check availability in real-time
+- Handle special requests
+- Send confirmation emails
+- Process cancellations and modifications
+
+```python
+@tool("Check table availability")
+def check_availability(self, date: str, time: str, party_size: int) -> dict:
+    return {"available": True, "tables": ["Table 5", "Table 12"]}
+
+@tool("Create reservation")
+def book_table(self, date: str, time: str, name: str, party_size: int) -> dict:
+    return {"reservation_id": "RES123", "confirmed": True}
+```
+
+### Appointment Scheduling
+
+For healthcare, salons, professional services:
+
+- View available time slots
+- Book appointments
+- Send reminders
+- Handle rescheduling
+
+**Industries:**
+- Healthcare (doctor appointments)
+- Beauty & Wellness (salon bookings)
+- Professional Services (consultations)
+- Fitness (class reservations)
+
+## E-Commerce & Sales
+
+### Voice Shopping Assistant
+
+Transform the online shopping experience:
+
+- Product recommendations
+- Add items to cart
+- Check inventory and pricing
+- Process orders
+- Track shipments
+
+```python
+@tool("Search products")
+def search_products(self, query: str, category: str = None) -> dict:
+    return {"products": [
+        {"id": "P123", "name": "Wireless Headphones", "price": 79.99}
+    ]}
+
+@tool("Add to cart")
+def add_to_cart(self, product_id: str, quantity: int) -> dict:
+    return {"cart_id": "CART456", "total": 159.98}
+```
+
+### Lead Qualification
+
+Qualify sales leads through voice interactions:
+
+- Gather prospect information
+- Assess needs and budget
+- Schedule sales calls
+- Send product information
+
+## Healthcare & Wellness
+
+### Patient Intake
+
+Streamline patient intake processes:
+
+- Collect medical history
+- Schedule appointments
+- Verify insurance information
+- Answer common medical questions
+
+```python
+@tool("Schedule appointment")
+def book_appointment(self, date: str, time: str, reason: str) -> dict:
+    return {"appointment_id": "APT789", "doctor": "Dr. Smith"}
+
+@tool("Verify insurance")
+def verify_insurance(self, policy_number: str) -> dict:
+    return {"verified": True, "coverage": "active"}
+```
+
+### Medication Reminders
+
+Voice-enabled medication management:
+
+- Remind patients to take medications
+- Answer questions about prescriptions
+- Connect with pharmacies
+- Log medication adherence
+
+**Compliance Note:** Ensure HIPAA compliance for healthcare applications.
+
+## Financial Services
+
+### Banking Assistant
+
+Voice-powered banking services:
+
+- Check account balances
+- Transfer funds
+- Pay bills
+- Report fraud
+- Find ATM locations
+
+```python
+@tool("Get account balance")
+def get_balance(self, account_id: str) -> dict:
+    return {"balance": 5234.50, "currency": "USD"}
+
+@tool("Transfer funds")
+def transfer_money(self, from_account: str, to_account: str, amount: float) -> dict:
+    return {"transaction_id": "TXN123", "status": "completed"}
+```
+
+### Insurance Quotes
+
+Provide instant insurance quotes:
+
+- Gather customer information
+- Calculate premiums
+- Explain coverage options
+- Process applications
+
+## Education & Training
+
+### Virtual Tutor
+
+AI-powered educational assistance:
+
+- Answer student questions
+- Provide explanations
+- Recommend learning resources
+- Track progress
+
+```python
+@tool("Explain concept")
+def explain_concept(self, topic: str, difficulty: str) -> dict:
+    return {"explanation": "...", "examples": [...]}
+
+@tool("Get practice problems")
+def get_exercises(self, topic: str, count: int) -> dict:
+    return {"problems": [...]}
+```
+
+### Language Learning
+
+Voice conversation practice:
+
+- Conversational practice
+- Pronunciation feedback
+- Grammar correction
+- Vocabulary building
+
+## Real Estate
+
+### Property Information
+
+Voice-enabled property search:
+
+- Search listings by criteria
+- Schedule property viewings
+- Answer questions about properties
+- Provide neighborhood information
+
+```python
+@tool("Search properties")
+def search_listings(self, location: str, min_price: float, max_price: float) -> dict:
+    return {"listings": [
+        {"id": "P123", "address": "123 Main St", "price": 450000}
+    ]}
+
+@tool("Schedule viewing")
+def book_viewing(self, property_id: str, date: str, time: str) -> dict:
+    return {"viewing_id": "VIEW456", "agent": "Jane Doe"}
+```
+
+## Hospitality & Travel
+
+### Hotel Concierge
+
+Voice-powered hotel services:
+
+- Room service orders
+- Housekeeping requests
+- Local recommendations
+- Activity bookings
+
+### Travel Planning
+
+Assist with travel arrangements:
+
+- Flight and hotel searches
+- Itinerary planning
+- Travel recommendations
+- Booking confirmations
+
+## Enterprise Use Cases
+
+### Internal Help Desk
+
+Employee support for:
+
+- IT support requests
+- HR inquiries
+- Facility requests
+- Company policy questions
+
+### Meeting Scheduler
+
+Voice-powered meeting coordination:
+
+- Check availability
+- Find meeting rooms
+- Send calendar invites
+- Handle rescheduling
+
+## Selecting Your Use Case
+
+### Consider These Factors
+
+<CardGroup cols={2}>
+  <Card title="Conversation Length" icon="clock">
+    Short interactions (2-3 mins) work best initially
+  </Card>
+  <Card title="Tool Complexity" icon="code">
+    Start with simple tools, add complexity iteratively
+  </Card>
+  <Card title="Error Tolerance" icon="shield">
+    Higher tolerance for errors in early deployments
+  </Card>
+  <Card title="Value Proposition" icon="chart-line">
+    Clear benefit over traditional interfaces
+  </Card>
+</CardGroup>
+
+### Starting Simple
+
+Begin with a focused use case:
+
+1. **Identify a repetitive task** that consumes agent time
+2. **Define 3-5 core tools** needed to complete the task
+3. **Build and test** with a small user group
+4. **Iterate based on feedback** and expand capabilities
+5. **Scale gradually** as confidence grows
+
+## Next Steps
+
+Ready to build your use case?
+
+<CardGroup cols={2}>
+  <Card title="Quickstart" icon="rocket" href="/quickstart">
+    Create your first agent
+  </Card>
+  <Card title="Examples" icon="code" href="/examples/simple-agent">
+    Explore code examples
+  </Card>
+  <Card title="Core Concepts" icon="book" href="/core-concepts/agent">
+    Learn the fundamentals
+  </Card>
+  <Card title="Best Practices" icon="star" href="/guides/best-practices">
+    Follow proven patterns
+  </Card>
+</CardGroup>

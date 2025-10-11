@@ -1,0 +1,347 @@
+---
+title: "Security"
+description: "Secure your voice agents and protect user data."
+---
+
+## Overview
+
+Security is critical for production voice agents. This guide covers essential security practices for protecting your agent and user data.
+
+## API Key Security
+
+### Never Hardcode Keys
+
+```python
+# ❌ Bad - hardcoded credentials
+agent = ConversimpleAgent(
+    api_key="cs_live_abc123xyz",  # NEVER DO THIS
+    customer_id="cust_abc123"
+)
+
+# ✅ Good - use environment variables
+agent = ConversimpleAgent(
+    api_key=os.getenv('CONVERSIMPLE_API_KEY'),
+    customer_id=os.getenv('CONVERSIMPLE_CUSTOMER_ID')
+)
+```
+
+### Use .env Files
+
+```bash
+# .env file
+CONVERSIMPLE_API_KEY=cs_live_your_key_here
+CONVERSIMPLE_CUSTOMER_ID=cust_your_id_here
+DATABASE_URL=postgresql://...
+```
+
+```python
+# Load environment variables
+from dotenv import load_dotenv
+load_dotenv()
+
+agent = ConversimpleAgent(
+    api_key=os.getenv('CONVERSIMPLE_API_KEY'),
+    customer_id=os.getenv('CONVERSIMPLE_CUSTOMER_ID')
+)
+```
+
+**Important:** Add `.env` to `.gitignore`:
+```
+# .gitignore
+.env
+.env.local
+*.env
+```
+
+### Rotate Keys Regularly
+
+Rotate API keys every 90 days:
+
+```bash
+# Generate new key in Conversimple dashboard
+# Update environment variable
+export CONVERSIMPLE_API_KEY="cs_live_new_key"
+
+# Restart agent with new key
+sudo systemctl restart conversimple-agent
+```
+
+## Input Validation
+
+### Validate All Tool Inputs
+
+```python
+@tool("Process payment")
+def process_payment(self, amount: float, currency: str = "USD") -> dict:
+    """Validate inputs before processing"""
+    # Validate amount
+    if not isinstance(amount, (int, float)):
+        return {"error": "invalid_type"}
+
+    if amount <= 0:
+        return {"error": "invalid_amount", "message": "Amount must be positive"}
+
+    if amount > 10000:
+        return {"error": "amount_too_large", "message": "Maximum amount is $10,000"}
+
+    # Validate currency
+    allowed_currencies = ["USD", "EUR", "GBP"]
+    if currency not in allowed_currencies:
+        return {"error": "invalid_currency"}
+
+    # Process payment
+    return payment_service.charge(amount, currency)
+```
+
+### Sanitize String Inputs
+
+```python
+import re
+
+@tool("Search products")
+def search_products(self, query: str) -> dict:
+    """Sanitize search input"""
+    # Remove special characters
+    query = re.sub(r'[^a-zA-Z0-9\s]', '', query)
+
+    # Limit length
+    query = query[:100]
+
+    # Search with sanitized query
+    return database.search(query)
+```
+
+## Prevent SQL Injection
+
+### Use Parameterized Queries
+
+```python
+# ❌ Bad - SQL injection vulnerable
+def get_customer(self, customer_id: str):
+    query = f"SELECT * FROM customers WHERE id = '{customer_id}'"
+    return database.execute(query)
+
+# ✅ Good - parameterized query
+def get_customer(self, customer_id: str):
+    query = "SELECT * FROM customers WHERE id = ?"
+    return database.execute(query, (customer_id,))
+```
+
+### Use ORM
+
+```python
+# ✅ Safe with SQLAlchemy
+from sqlalchemy.orm import Session
+
+@tool("Get customer")
+def get_customer(self, customer_id: str) -> dict:
+    """Use ORM for safe queries"""
+    with Session(engine) as session:
+        customer = session.query(Customer).filter_by(id=customer_id).first()
+        return customer.to_dict() if customer else {"error": "not_found"}
+```
+
+## Protect Sensitive Data
+
+### Don't Log Sensitive Information
+
+```python
+# ❌ Bad - logs sensitive data
+logger.info(f"Processing payment: card={card_number}, cvv={cvv}")
+
+# ✅ Good - masks sensitive data
+logger.info(f"Processing payment: card=****{card_number[-4:]}")
+```
+
+### Encrypt Sensitive Data
+
+```python
+from cryptography.fernet import Fernet
+
+class SecureAgent(ConversimpleAgent):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.cipher = Fernet(os.getenv('ENCRYPTION_KEY').encode())
+
+    def store_card(self, card_number: str):
+        """Encrypt before storing"""
+        encrypted = self.cipher.encrypt(card_number.encode())
+        database.store(encrypted)
+
+    def retrieve_card(self, customer_id: str):
+        """Decrypt when retrieving"""
+        encrypted = database.get(customer_id)
+        return self.cipher.decrypt(encrypted).decode()
+```
+
+### Mask Data in Responses
+
+```python
+@tool("Get customer payment methods")
+def get_payment_methods(self, customer_id: str) -> dict:
+    """Return masked data"""
+    cards = database.get_cards(customer_id)
+
+    return {
+        "cards": [
+            {
+                "id": card.id,
+                "last_four": card.number[-4:],
+                "type": card.type
+                # Don't return full card number
+            }
+            for card in cards
+        ]
+    }
+```
+
+## Rate Limiting
+
+### Limit Tool Calls
+
+```python
+from datetime import datetime, timedelta
+
+class RateLimitedAgent(ConversimpleAgent):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.call_counts = {}
+
+    def check_rate_limit(self, tool_name: str, limit: int = 10) -> bool:
+        """Check if tool call is within rate limit"""
+        now = datetime.now()
+        key = tool_name
+
+        # Clean old entries
+        if key in self.call_counts:
+            self.call_counts[key] = [
+                t for t in self.call_counts[key]
+                if now - t < timedelta(minutes=1)
+            ]
+
+        # Check limit
+        count = len(self.call_counts.get(key, []))
+        if count >= limit:
+            return False
+
+        # Record call
+        if key not in self.call_counts:
+            self.call_counts[key] = []
+        self.call_counts[key].append(now)
+
+        return True
+
+    @tool("Expensive operation")
+    def expensive_operation(self) -> dict:
+        """Rate-limited tool"""
+        if not self.check_rate_limit("expensive_operation", limit=5):
+            return {
+                "error": "rate_limit_exceeded",
+                "message": "Too many requests. Please try again later."
+            }
+
+        return self.do_expensive_thing()
+```
+
+## Authentication
+
+### Verify User Identity
+
+```python
+@tool("Login")
+def login(self, username: str, password: str) -> dict:
+    """Authenticate user"""
+    # Verify credentials
+    user = auth_service.authenticate(username, password)
+
+    if not user:
+        logger.warning(f"Failed login attempt: {username}")
+        return {"success": False, "error": "invalid_credentials"}
+
+    # Store authenticated user
+    conv_id = self.current_conversation_id
+    self.update_state(conv_id,
+        authenticated=True,
+        user_id=user.id,
+        auth_time=datetime.now()
+    )
+
+    logger.info(f"User logged in: {user.id}")
+    return {"success": True, "user": user.username}
+
+@tool("Get account balance")
+def get_balance(self, account_id: str) -> dict:
+    """Require authentication"""
+    conv_id = self.current_conversation_id
+    state = self.get_state(conv_id)
+
+    # Check authentication
+    if not state.get("authenticated"):
+        return {"error": "authentication_required"}
+
+    # Verify user owns account
+    if account_id not in state.get("user_accounts", []):
+        logger.warning(f"Unauthorized access attempt: {account_id}")
+        return {"error": "unauthorized"}
+
+    return {"balance": database.get_balance(account_id)}
+```
+
+## HTTPS/TLS
+
+### Use Secure Connections
+
+```python
+# ✅ Always use wss:// (secure WebSocket)
+agent = ConversimpleAgent(
+    api_key=api_key,
+    customer_id=customer_id,
+    platform_url="wss://platform.conversimple.com/sdk/websocket"
+)
+
+# ❌ Never use ws:// in production
+# platform_url="ws://..."  # Only for local development
+```
+
+## Error Messages
+
+### Don't Expose Internal Details
+
+```python
+# ❌ Bad - exposes internal details
+return {
+    "error": "DatabaseConnectionError at line 42: host not found",
+    "stack_trace": traceback.format_exc()
+}
+
+# ✅ Good - generic error message
+return {
+    "error": "service_unavailable",
+    "message": "Unable to process request. Please try again."
+}
+```
+
+## Security Checklist
+
+Before deploying:
+
+- [ ] API keys stored in environment variables
+- [ ] `.env` added to `.gitignore`
+- [ ] Input validation on all tools
+- [ ] Parameterized database queries
+- [ ] Sensitive data not logged
+- [ ] HTTPS/WSS connections only
+- [ ] Rate limiting implemented
+- [ ] Authentication for sensitive operations
+- [ ] Generic error messages
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Deployment" icon="rocket" href="/guides/deployment">
+    Deploy securely
+  </Card>
+  <Card title="Best Practices" icon="star" href="/guides/best-practices">
+    Follow best practices
+  </Card>
+</CardGroup>

@@ -1,0 +1,89 @@
+---
+title: "Tool Execution Errors"
+description: "Troubleshoot tool execution problems."
+---
+
+## Tool Not Being Called
+
+### Symptom
+AI doesn't call your tool
+
+### Solutions
+
+#### 1. Verify Tool Registration
+
+```python
+agent = MyAgent(api_key=api_key, customer_id=customer_id)
+await agent.start()
+
+# Check registered tools
+print("Registered tools:")
+for tool in agent._registered_tools:
+    print(f"  - {tool['name']}: {tool['description']}")
+```
+
+#### 2. Improve Tool Description
+
+```python
+# ❌ Bad - vague
+@tool("Get data")
+def get_data(self, id: str): pass
+
+# ✅ Good - clear and specific
+@tool("Get customer information including name, email, and account status by customer ID")
+def get_customer(self, customer_id: str): pass
+```
+
+## Tool Execution Fails
+
+### Symptom
+Tool throws exception
+
+### Solutions
+
+#### Add Error Handling
+
+```python
+@tool("Get product")
+def get_product(self, product_id: str) -> dict:
+    """Tool with error handling"""
+    try:
+        product = database.get(product_id)
+        if not product:
+            return {"error": "not_found"}
+        return product
+    except Exception as e:
+        logger.error(f"Error: {e}")
+        return {"error": "internal_error"}
+```
+
+## Tool Returns Wrong Data
+
+### Solutions
+
+#### Debug Tool Output
+
+```python
+@tool("My tool")
+def my_tool(self, param: str) -> dict:
+    """Debug tool output"""
+    result = process(param)
+
+    # Log result
+    logger.debug(f"Tool result: {result}")
+
+    return result
+```
+
+## Common Fixes
+
+| Issue | Fix |
+|-------|-----|
+| Tool not called | Improve description |
+| Tool fails | Add error handling |
+| Wrong output | Add logging |
+| Timeout | Optimize tool code |
+
+<Card title="Debugging" icon="bug" href="/guides/debugging">
+  Learn debugging techniques
+</Card>

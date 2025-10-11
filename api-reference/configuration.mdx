@@ -1,0 +1,103 @@
+---
+title: "Configuration"
+description: "Complete configuration reference for ConversimpleAgent."
+---
+
+## ConversimpleAgent Configuration
+
+### Constructor Parameters
+
+```python
+ConversimpleAgent(
+    api_key: str,
+    customer_id: str = None,
+    platform_url: str = "ws://localhost:4000/sdk/websocket",
+    mode: str = "stt",
+    connection_timeout: int = 10,
+    log_level: str = "INFO"
+)
+```
+
+#### Required Parameters
+
+**api_key** `str`
+- Your Conversimple API key
+- Format: `cs_live_*` (production) or `cs_test_*` (development)
+- Get from: Dashboard → Settings → API Keys
+
+**customer_id** `str`
+- Your customer/organization ID
+- Format: `cust_*`
+- Get from: Dashboard → Settings → Account
+
+#### Optional Parameters
+
+**platform_url** `str`
+- WebSocket URL for the platform
+- Default: `"ws://localhost:4000/sdk/websocket"` (development)
+- Production: `"wss://app.conversimple.com/sdk/websocket"`
+
+**mode** `str`
+- Conversation mode: `"stt"` or `"sts"`
+- Default: `"stt"`
+- See: [Conversation Modes](/platform-overview/conversation-modes)
+
+**connection_timeout** `int`
+- Connection timeout in seconds
+- Default: `10`
+- Increase for slow networks
+
+**log_level** `str`
+- Logging level: `"DEBUG"`, `"INFO"`, `"WARNING"`, `"ERROR"`
+- Default: `"INFO"`
+
+## Environment Variables
+
+### Standard Variables
+
+```bash
+# Authentication
+CONVERSIMPLE_API_KEY="cs_live_your_key"
+CONVERSIMPLE_CUSTOMER_ID="cust_your_id"
+
+# Platform
+CONVERSIMPLE_PLATFORM_URL="wss://app.conversimple.com/sdk/websocket"
+
+# Logging
+CONVERSIMPLE_LOG_LEVEL="INFO"
+```
+
+### Usage
+
+```python
+# Load from environment
+agent = ConversimpleAgent(
+    api_key=os.getenv('CONVERSIMPLE_API_KEY'),
+    customer_id=os.getenv('CONVERSIMPLE_CUSTOMER_ID'),
+    platform_url=os.getenv('CONVERSIMPLE_PLATFORM_URL')
+)
+```
+
+## Example Configurations
+
+### Development
+
+```python
+agent = ConversimpleAgent(
+    api_key="cs_test_dev_key",
+    customer_id="cust_dev",
+    platform_url="ws://localhost:4000/sdk/websocket",
+    log_level="DEBUG"
+)
+```
+
+### Production
+
+```python
+agent = ConversimpleAgent(
+    api_key=os.getenv('CONVERSIMPLE_API_KEY'),
+    customer_id=os.getenv('CONVERSIMPLE_CUSTOMER_ID'),
+    platform_url="wss://app.conversimple.com/sdk/websocket",
+    log_level="WARNING"
+)
+```

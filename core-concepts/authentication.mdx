@@ -1,0 +1,395 @@
+---
+title: "Authentication"
+description: "Learn how to authenticate and securely connect your agent to the Conversimple platform."
+---
+
+## Overview
+
+Conversimple uses API key authentication to secure your agent's connection to the platform. Each agent instance requires both an API key and a customer ID to establish a connection.
+
+## Credentials
+
+### API Key
+
+Your API key is a secret token that identifies your account and authorizes access to the platform.
+
+**Format:** `cs_live_xxxxxxxxxxxxxxxxxxxxx` (production) or `cs_test_xxxxxxxxxxxxxxxxxxxxx` (development)
+
+**Security:** Treat your API key like a password:
+- Never commit API keys to version control
+- Rotate keys periodically
+- Use environment variables to store keys
+- Use different keys for development and production
+
+### Customer ID
+
+Your customer ID uniquely identifies your organization on the platform.
+
+**Format:** `cust_xxxxxxxxxxxxxxxxxxxxx`
+
+**Purpose:**
+- Identifies your organization for billing and usage tracking
+- Enables multi-tenant isolation
+- Associates conversations with your account
+
+## Configuration Methods
+
+### Environment Variables (Recommended)
+
+The most secure way to provide credentials:
+
+```bash
+# Set environment variables
+export CONVERSIMPLE_API_KEY="cs_live_your_key_here"
+export CONVERSIMPLE_CUSTOMER_ID="cust_your_id_here"
+export CONVERSIMPLE_PLATFORM_URL="wss://app.conversimple.com/sdk/websocket"
+```
+
+```python
+import os
+from conversimple import ConversimpleAgent
+
+# Automatically reads from environment variables
+agent = ConversimpleAgent()
+```
+
+### Programmatic Configuration
+
+Pass credentials directly when needed:
+
+```python
+from conversimple import ConversimpleAgent
+
+agent = ConversimpleAgent(
+    api_key="cs_live_your_key_here",
+    customer_id="cust_your_id_here",
+    platform_url="wss://app.conversimple.com/sdk/websocket"
+)
+```
+
+<Warning>
+  Only use programmatic configuration when environment variables aren't available. Always use secrets management for production deployments.
+</Warning>
+
+### Configuration File
+
+For development environments:
+
+```python
+# config.py
+CONVERSIMPLE_CONFIG = {
+    "api_key": os.getenv("CONVERSIMPLE_API_KEY"),
+    "customer_id": os.getenv("CONVERSIMPLE_CUSTOMER_ID"),
+    "platform_url": os.getenv(
+        "CONVERSIMPLE_PLATFORM_URL",
+        "ws://localhost:4000/sdk/websocket"
+    )
+}
+
+# agent.py
+from config import CONVERSIMPLE_CONFIG
+from conversimple import ConversimpleAgent
+
+agent = ConversimpleAgent(**CONVERSIMPLE_CONFIG)
+```
+
+## Connection Process
+
+### WebSocket Connection
+
+When you call `agent.start()`, the SDK:
+
+1. **Validates credentials** locally (format checks)
+2. **Establishes WebSocket connection** to the platform
+3. **Sends authentication** message with API key and customer ID
+4. **Receives confirmation** or error
+5. **Registers tools** with the platform
+6. **Enters ready state** to handle conversations
+
+```python
+import asyncio
+from conversimple import ConversimpleAgent
+
+async def main():
+    agent = ConversimpleAgent(
+        api_key="cs_live_your_key_here",
+        customer_id="cust_your_id_here"
+    )
+
+    try:
+        # Establishes connection and authenticates
+        await agent.start()
+        print("✅ Connected and authenticated")
+
+        # Agent is now ready for conversations
+        while True:
+            await asyncio.sleep(1)
+
+    except Exception as e:
+        print(f"❌ Authentication failed: {e}")
+
+asyncio.run(main())
+```
+
+### Authentication Errors
+
+Common authentication errors:
+
+| Error | Cause | Solution |
+|-------|-------|----------|
+| `Invalid API key` | Wrong or malformed key | Check your API key format and value |
+| `API key revoked` | Key has been disabled | Generate a new API key |
+| `Customer ID mismatch` | Wrong customer ID | Verify your customer ID |
+| `Rate limit exceeded` | Too many connection attempts | Implement exponential backoff |
+| `WebSocket connection failed` | Network or platform issue | Check network and platform status |
+
+## Security Best Practices
+
+### 1. Use Environment Variables
+
+Never hardcode credentials in source code:
+
+❌ **Bad:**
+```python
+agent = ConversimpleAgent(
+    api_key="cs_live_abc123xyz",  # DON'T DO THIS!
+    customer_id="cust_abc123"
+)
+```
+
+✅ **Good:**
+```python
+agent = ConversimpleAgent(
+    api_key=os.getenv("CONVERSIMPLE_API_KEY"),
+    customer_id=os.getenv("CONVERSIMPLE_CUSTOMER_ID")
+)
+```
+
+### 2. Use .env Files
+
+For local development:
+
+```bash
+# .env file
+CONVERSIMPLE_API_KEY=cs_test_your_key_here
+CONVERSIMPLE_CUSTOMER_ID=cust_your_id_here
+```
+
+```python
+# Load environment variables from .env
+from dotenv import load_dotenv
+load_dotenv()
+
+from conversimple import ConversimpleAgent
+agent = ConversimpleAgent()  # Reads from environment
+```
+
+**Important:** Add `.env` to `.gitignore`:
+```
+# .gitignore
+.env
+.env.local
+.env.*.local
+```
+
+### 3. Use Secrets Management
+
+For production:
+
+**AWS Secrets Manager:**
+```python
+import boto3
+import json
+
+def get_secret(secret_name):
+    client = boto3.client('secretsmanager')
+    response = client.get_secret_value(SecretId=secret_name)
+    return json.loads(response['SecretString'])
+
+credentials = get_secret('conversimple/prod')
+agent = ConversimpleAgent(
+    api_key=credentials['api_key'],
+    customer_id=credentials['customer_id']
+)
+```
+
+**HashiCorp Vault:**
+```python
+import hvac
+
+client = hvac.Client(url='https://vault.example.com')
+client.auth.approle.login(role_id='...', secret_id='...')
+
+secret = client.secrets.kv.v2.read_secret_version(path='conversimple/prod')
+credentials = secret['data']['data']
+
+agent = ConversimpleAgent(
+    api_key=credentials['api_key'],
+    customer_id=credentials['customer_id']
+)
+```
+
+### 4. Rotate Keys Regularly
+
+Implement key rotation:
+
+```python
+class AgentManager:
+    def __init__(self):
+        self.agent = None
+        self.credentials = self.load_credentials()
+
+    def load_credentials(self):
+        """Load credentials from secure storage"""
+        return {
+            "api_key": get_from_secrets_manager("api_key"),
+            "customer_id": get_from_secrets_manager("customer_id")
+        }
+
+    async def rotate_credentials(self):
+        """Rotate credentials without downtime"""
+        # Get new credentials
+        new_creds = self.load_credentials()
+
+        # Stop old agent
+        if self.agent:
+            await self.agent.stop()
+
+        # Start new agent with new credentials
+        self.agent = ConversimpleAgent(**new_creds)
+        await self.agent.start()
+```
+
+### 5. Different Keys Per Environment
+
+Use separate API keys for each environment:
+
+```python
+# Development
+api_key = "cs_test_dev_key"
+
+# Staging
+api_key = "cs_test_staging_key"
+
+# Production
+api_key = "cs_live_production_key"
+```
+
+This allows you to:
+- Test without affecting production
+- Track usage per environment
+- Revoke keys independently
+- Set different rate limits
+
+## Monitoring Authentication
+
+### Connection Health
+
+Monitor your connection status:
+
+```python
+class MonitoredAgent(ConversimpleAgent):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.connection_status = "disconnected"
+        self.last_connected = None
+
+    async def start(self):
+        """Start with monitoring"""
+        try:
+            await super().start()
+            self.connection_status = "connected"
+            self.last_connected = datetime.now()
+            print(f"✅ Connected at {self.last_connected}")
+        except Exception as e:
+            self.connection_status = "failed"
+            print(f"❌ Connection failed: {e}")
+            raise
+
+    def on_error(self, error_type: str, message: str, details: dict):
+        """Handle authentication errors"""
+        if error_type == "authentication":
+            print(f"🔑 Auth error: {message}")
+            self.connection_status = "authentication_failed"
+```
+
+### Logging Authentication Events
+
+Track authentication for debugging and auditing:
+
+```python
+import logging
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+class AuditedAgent(ConversimpleAgent):
+    async def start(self):
+        logger.info(f"Attempting authentication for customer: {self.customer_id}")
+        try:
+            await super().start()
+            logger.info("✅ Authentication successful")
+        except Exception as e:
+            logger.error(f"❌ Authentication failed: {e}")
+            raise
+```
+
+## Troubleshooting
+
+### Connection Timeout
+
+If connection takes too long:
+
+```python
+agent = ConversimpleAgent(
+    api_key=api_key,
+    customer_id=customer_id,
+    connection_timeout=30  # Increase timeout to 30 seconds
+)
+```
+
+### Network Issues
+
+Test platform connectivity:
+
+```python
+import aiohttp
+
+async def test_platform_connectivity():
+    """Test if platform is reachable"""
+    try:
+        async with aiohttp.ClientSession() as session:
+            async with session.get('https://app.conversimple.com/health') as response:
+                if response.status == 200:
+                    print("✅ Platform is reachable")
+                else:
+                    print(f"⚠️ Platform returned {response.status}")
+    except Exception as e:
+        print(f"❌ Cannot reach platform: {e}")
+```
+
+### Debugging Authentication
+
+Enable debug logging:
+
+```python
+import logging
+
+# Enable SDK debug logs
+logging.getLogger('conversimple').setLevel(logging.DEBUG)
+
+# Your agent will now show detailed auth logs
+agent = ConversimpleAgent(api_key=api_key, customer_id=customer_id)
+await agent.start()
+```
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Conversation Lifecycle" icon="circle-play" href="/core-concepts/conversation-lifecycle">
+    Learn about conversation flow
+  </Card>
+  <Card title="Error Handling" icon="shield" href="/core-concepts/error-handling">
+    Handle authentication errors gracefully
+  </Card>
+</CardGroup>

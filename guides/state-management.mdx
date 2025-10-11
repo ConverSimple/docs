@@ -1,0 +1,431 @@
+---
+title: "State Management"
+description: "Best practices for managing conversation state in your voice agents."
+---
+
+## Overview
+
+Effective state management is crucial for building complex voice agents. This guide covers strategies for managing both conversation-specific and persistent state.
+
+## Conversation State
+
+### Per-Conversation State
+
+Store data specific to each conversation:
+
+```python
+from conversimple import ConversimpleAgent, tool
+
+class StatefulAgent(ConversimpleAgent):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        # Dictionary to store conversation-specific state
+        self.conversations = {}
+
+    def on_conversation_started(self, conversation_id: str):
+        """Initialize state for new conversation"""
+        self.conversations[conversation_id] = {
+            "customer_id": None,
+            "authenticated": False,
+            "cart": [],
+            "preferences": {},
+            "conversation_history": [],
+            "created_at": datetime.now()
+        }
+
+    def get_state(self, conversation_id: str) -> dict:
+        """Get state for a conversation"""
+        return self.conversations.get(conversation_id, {})
+
+    def update_state(self, conversation_id: str, **updates):
+        """Update conversation state"""
+        if conversation_id in self.conversations:
+            self.conversations[conversation_id].update(updates)
+
+    def on_conversation_ended(self, conversation_id: str):
+        """Clean up conversation state"""
+        if conversation_id in self.conversations:
+            # Optionally persist state before deleting
+            state = self.conversations.pop(conversation_id)
+            self.persist_conversation(conversation_id, state)
+```
+
+### State in Tools
+
+Access and modify state within tools:
+
+```python
+@tool("Add item to cart")
+def add_to_cart(self, product_id: str, quantity: int = 1) -> dict:
+    """Add item to cart"""
+    conv_id = self.current_conversation_id
+    state = self.get_state(conv_id)
+
+    if not state.get("authenticated"):
+        return {"error": "Please log in first"}
+
+    # Update cart
+    state["cart"].append({
+        "product_id": product_id,
+        "quantity": quantity,
+        "added_at": datetime.now()
+    })
+
+    return {
+        "success": True,
+        "cart_size": len(state["cart"])
+    }
+
+@tool("Get cart total")
+def get_cart_total(self) -> dict:
+    """Calculate cart total"""
+    conv_id = self.current_conversation_id
+    state = self.get_state(conv_id)
+
+    total = sum(
+        item.get("price", 0) * item.get("quantity", 1)
+        for item in state.get("cart", [])
+    )
+
+    return {"total": total, "items": len(state["cart"])}
+```
+
+## Persistent State
+
+### Database Storage
+
+Store state in a database for persistence:
+
+```python
+import sqlite3
+import json
+
+class PersistentAgent(ConversimpleAgent):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.db = sqlite3.connect('conversations.db')
+        self.create_tables()
+
+    def create_tables(self):
+        """Create database tables"""
+        self.db.execute('''
+            CREATE TABLE IF NOT EXISTS conversation_state (
+                conversation_id TEXT PRIMARY KEY,
+                customer_id TEXT,
+                state JSON,
+                created_at TIMESTAMP,
+                updated_at TIMESTAMP
+            )
+        ''')
+        self.db.commit()
+
+    def save_state(self, conversation_id: str, state: dict):
+        """Save state to database"""
+        self.db.execute('''
+            INSERT OR REPLACE INTO conversation_state
+            (conversation_id, customer_id, state, updated_at)
+            VALUES (?, ?, ?, ?)
+        ''', (
+            conversation_id,
+            state.get('customer_id'),
+            json.dumps(state),
+            datetime.now()
+        ))
+        self.db.commit()
+
+    def load_state(self, conversation_id: str) -> dict:
+        """Load state from database"""
+        cursor = self.db.execute(
+            'SELECT state FROM conversation_state WHERE conversation_id = ?',
+            (conversation_id,)
+        )
+        row = cursor.fetchone()
+        return json.loads(row[0]) if row else {}
+
+    def on_conversation_ended(self, conversation_id: str):
+        """Persist state on conversation end"""
+        state = self.conversations.get(conversation_id, {})
+        self.save_state(conversation_id, state)
+```
+
+### Redis for Fast Access
+
+Use Redis for high-performance state storage:
+
+```python
+import redis
+import json
+
+class RedisAgent(ConversimpleAgent):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.redis = redis.Redis(
+            host='localhost',
+            port=6379,
+            db=0,
+            decode_responses=True
+        )
+
+    def save_state(self, conversation_id: str, state: dict):
+        """Save state to Redis"""
+        key = f"conversation:{conversation_id}"
+        self.redis.setex(
+            key,
+            86400,  # Expire after 24 hours
+            json.dumps(state)
+        )
+
+    def load_state(self, conversation_id: str) -> dict:
+        """Load state from Redis"""
+        key = f"conversation:{conversation_id}"
+        data = self.redis.get(key)
+        return json.loads(data) if data else {}
+
+    @tool("Get customer history")
+    def get_customer_history(self, customer_id: str) -> dict:
+        """Load customer data from Redis"""
+        key = f"customer:{customer_id}"
+        data = self.redis.get(key)
+        return json.loads(data) if data else {"orders": [], "preferences": {}}
+```
+
+## State Patterns
+
+### Session Pattern
+
+Manage authentication and session data:
+
+```python
+class SessionAgent(ConversimpleAgent):
+    @tool("Login")
+    def login(self, username: str, password: str) -> dict:
+        """Authenticate user"""
+        conv_id = self.current_conversation_id
+
+        # Verify credentials
+        user = auth_service.authenticate(username, password)
+
+        if user:
+            # Store session data
+            self.update_state(conv_id,
+                authenticated=True,
+                user_id=user.id,
+                username=user.username,
+                session_started=datetime.now()
+            )
+
+            return {"success": True, "user": user.username}
+
+        return {"success": False, "error": "Invalid credentials"}
+
+    @tool("Logout")
+    def logout(self) -> dict:
+        """End session"""
+        conv_id = self.current_conversation_id
+        self.update_state(conv_id,
+            authenticated=False,
+            user_id=None
+        )
+        return {"success": True}
+```
+
+### Workflow Pattern
+
+Track multi-step processes:
+
+```python
+class WorkflowAgent(ConversimpleAgent):
+    def on_conversation_started(self, conversation_id: str):
+        """Initialize workflow state"""
+        super().on_conversation_started(conversation_id)
+        self.update_state(conversation_id,
+            workflow_step="initial",
+            workflow_data={}
+        )
+
+    @tool("Start booking")
+    def start_booking(self) -> dict:
+        """Start booking workflow"""
+        conv_id = self.current_conversation_id
+        self.update_state(conv_id, workflow_step="collecting_dates")
+        return {"message": "When would you like to book?"}
+
+    @tool("Set dates")
+    def set_dates(self, check_in: str, check_out: str) -> dict:
+        """Set booking dates"""
+        conv_id = self.current_conversation_id
+        state = self.get_state(conv_id)
+
+        state["workflow_data"]["check_in"] = check_in
+        state["workflow_data"]["check_out"] = check_out
+
+        self.update_state(conv_id, workflow_step="collecting_guests")
+        return {"message": "How many guests?"}
+
+    @tool("Confirm booking")
+    def confirm_booking(self) -> dict:
+        """Complete booking workflow"""
+        conv_id = self.current_conversation_id
+        state = self.get_state(conv_id)
+
+        if state.get("workflow_step") != "ready_to_confirm":
+            return {"error": "Please complete all booking details first"}
+
+        # Process booking
+        booking = booking_service.create(state["workflow_data"])
+
+        self.update_state(conv_id,
+            workflow_step="completed",
+            booking_id=booking.id
+        )
+
+        return {"success": True, "booking_id": booking.id}
+```
+
+### Cache Pattern
+
+Cache expensive operations:
+
+```python
+from functools import lru_cache
+from datetime import timedelta
+
+class CachedAgent(ConversimpleAgent):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.cache = {}
+        self.cache_ttl = timedelta(minutes=5)
+
+    def get_cached(self, key: str, default=None):
+        """Get cached value"""
+        entry = self.cache.get(key)
+
+        if entry:
+            if datetime.now() - entry["timestamp"] < self.cache_ttl:
+                return entry["value"]
+            else:
+                del self.cache[key]
+
+        return default
+
+    def set_cached(self, key: str, value):
+        """Set cached value"""
+        self.cache[key] = {
+            "value": value,
+            "timestamp": datetime.now()
+        }
+
+    @tool("Get product details")
+    def get_product(self, product_id: str) -> dict:
+        """Get product with caching"""
+        cache_key = f"product:{product_id}"
+
+        # Try cache first
+        cached = self.get_cached(cache_key)
+        if cached:
+            return {**cached, "cached": True}
+
+        # Fetch from database
+        product = database.get_product(product_id)
+        self.set_cached(cache_key, product)
+
+        return product
+```
+
+## State Synchronization
+
+### Cross-Conversation State
+
+Share data across multiple conversations for the same customer:
+
+```python
+class CustomerStateAgent(ConversimpleAgent):
+    @tool("Get customer context")
+    def get_customer_context(self, customer_id: str) -> dict:
+        """Load shared customer state"""
+        # Load from persistent storage
+        customer_data = self.redis.get(f"customer:{customer_id}")
+
+        # Update current conversation
+        conv_id = self.current_conversation_id
+        self.update_state(conv_id,
+            customer_id=customer_id,
+            customer_data=customer_data
+        )
+
+        return customer_data
+
+    def on_conversation_ended(self, conversation_id: str):
+        """Update shared customer state"""
+        state = self.get_state(conversation_id)
+
+        if state.get("customer_id"):
+            # Update customer profile with conversation data
+            customer_id = state["customer_id"]
+            customer_key = f"customer:{customer_id}"
+
+            # Merge conversation data into customer profile
+            profile = self.redis.get(customer_key) or {}
+            profile["last_conversation"] = conversation_id
+            profile["last_interaction"] = datetime.now().isoformat()
+
+            self.redis.set(customer_key, json.dumps(profile))
+```
+
+## Best Practices
+
+### 1. Keep State Minimal
+
+```python
+# ❌ Bad - storing too much
+state = {
+    "entire_product_catalog": products,  # Don't store large data
+    "all_customer_orders": orders        # Store IDs instead
+}
+
+# ✅ Good - storing references
+state = {
+    "selected_product_ids": ["P123", "P456"],
+    "recent_order_id": "ORD789"
+}
+```
+
+### 2. Clean Up State
+
+```python
+def on_conversation_ended(self, conversation_id: str):
+    """Always clean up"""
+    # Save important data
+    state = self.conversations.get(conversation_id)
+    if state and state.get("customer_id"):
+        self.save_important_data(state)
+
+    # Remove from memory
+    self.conversations.pop(conversation_id, None)
+```
+
+### 3. Handle State Errors
+
+```python
+@tool("Get cart")
+def get_cart(self) -> dict:
+    """Safely access state"""
+    try:
+        conv_id = self.current_conversation_id
+        state = self.get_state(conv_id)
+        return {"cart": state.get("cart", [])}
+    except Exception as e:
+        logger.error(f"Error getting cart: {e}")
+        return {"cart": [], "error": "Could not load cart"}
+```
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Multi-Conversation" icon="users" href="/guides/multi-conversation-management">
+    Manage multiple conversations
+  </Card>
+  <Card title="Best Practices" icon="star" href="/guides/best-practices">
+    Production best practices
+  </Card>
+</CardGroup>

@@ -1,0 +1,391 @@
+---
+title: "Deployment"
+description: "Deploy your Conversimple voice agents to production with confidence."
+---
+
+## Overview
+
+Deploying voice agents requires careful consideration of reliability, scalability, and monitoring. This guide covers deployment strategies and best practices.
+
+## Deployment Options
+
+### 1. Traditional Server Deployment
+
+Deploy on a VPS or dedicated server:
+
+```bash
+# Install dependencies
+sudo apt-get update
+sudo apt-get install python3.11 python3-pip supervisor
+
+# Create application directory
+mkdir -p /opt/conversimple
+cd /opt/conversimple
+
+# Clone your agent code
+git clone https://github.com/yourcompany/your-agent.git
+cd your-agent
+
+# Create virtual environment
+python3 -m venv venv
+source venv/bin/activate
+
+# Install dependencies
+pip install -r requirements.txt
+
+# Configure environment
+cp .env.example .env
+nano .env  # Edit configuration
+```
+
+### 2. Docker Deployment
+
+Containerize your agent:
+
+```dockerfile
+# Dockerfile
+FROM python:3.11-slim
+
+WORKDIR /app
+
+# Install dependencies
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Copy application
+COPY . .
+
+# Run agent
+CMD ["python", "main.py"]
+```
+
+```bash
+# Build image
+docker build -t my-agent:latest .
+
+# Run container
+docker run -d \
+  --name my-agent \
+  --restart unless-stopped \
+  -e CONVERSIMPLE_API_KEY=$API_KEY \
+  -e CONVERSIMPLE_CUSTOMER_ID=$CUSTOMER_ID \
+  my-agent:latest
+```
+
+### 3. Kubernetes Deployment
+
+Deploy with Kubernetes for scalability:
+
+```yaml
+# deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: conversimple-agent
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: conversimple-agent
+  template:
+    metadata:
+      labels:
+        app: conversimple-agent
+    spec:
+      containers:
+      - name: agent
+        image: your-registry/my-agent:latest
+        env:
+        - name: CONVERSIMPLE_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: conversimple-secrets
+              key: api-key
+        - name: CONVERSIMPLE_CUSTOMER_ID
+          valueFrom:
+            secretKeyRef:
+              name: conversimple-secrets
+              key: customer-id
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "250m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8000
+          initialDelaySeconds: 30
+          periodSeconds: 10
+```
+
+```bash
+# Apply deployment
+kubectl apply -f deployment.yaml
+
+# Create secrets
+kubectl create secret generic conversimple-secrets \
+  --from-literal=api-key=$API_KEY \
+  --from-literal=customer-id=$CUSTOMER_ID
+```
+
+## Process Management
+
+### Supervisor Configuration
+
+Keep your agent running with Supervisor:
+
+```ini
+; /etc/supervisor/conf.d/conversimple-agent.conf
+[program:conversimple-agent]
+command=/opt/conversimple/venv/bin/python main.py
+directory=/opt/conversimple/your-agent
+user=conversimple
+autostart=true
+autorestart=true
+redirect_stderr=true
+stdout_logfile=/var/log/conversimple/agent.log
+environment=
+  CONVERSIMPLE_API_KEY="your-key",
+  CONVERSIMPLE_CUSTOMER_ID="your-id"
+```
+
+```bash
+# Reload supervisor
+sudo supervisorctl reread
+sudo supervisorctl update
+
+# Start agent
+sudo supervisorctl start conversimple-agent
+
+# Check status
+sudo supervisorctl status
+```
+
+### Systemd Service
+
+Use systemd for process management:
+
+```ini
+# /etc/systemd/system/conversimple-agent.service
+[Unit]
+Description=Conversimple Voice Agent
+After=network.target
+
+[Service]
+Type=simple
+User=conversimple
+WorkingDirectory=/opt/conversimple/your-agent
+Environment="CONVERSIMPLE_API_KEY=your-key"
+Environment="CONVERSIMPLE_CUSTOMER_ID=your-id"
+ExecStart=/opt/conversimple/venv/bin/python main.py
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target
+```
+
+```bash
+# Enable and start service
+sudo systemctl enable conversimple-agent
+sudo systemctl start conversimple-agent
+
+# Check status
+sudo systemctl status conversimple-agent
+
+# View logs
+sudo journalctl -u conversimple-agent -f
+```
+
+## Environment Configuration
+
+### Environment Variables
+
+```bash
+# Production environment variables
+export CONVERSIMPLE_API_KEY="cs_live_your_production_key"
+export CONVERSIMPLE_CUSTOMER_ID="cust_your_id"
+export CONVERSIMPLE_PLATFORM_URL="wss://app.conversimple.com/sdk/websocket"
+export LOG_LEVEL="INFO"
+export MAX_CONVERSATIONS="100"
+export DATABASE_URL="postgresql://user:pass@localhost/db"
+export REDIS_URL="redis://localhost:6379/0"
+```
+
+### Configuration Files
+
+```python
+# config.py
+import os
+
+class Config:
+    # Conversimple settings
+    API_KEY = os.getenv('CONVERSIMPLE_API_KEY')
+    CUSTOMER_ID = os.getenv('CONVERSIMPLE_CUSTOMER_ID')
+    PLATFORM_URL = os.getenv('CONVERSIMPLE_PLATFORM_URL', 'wss://app.conversimple.com/sdk/websocket')
+
+    # Application settings
+    LOG_LEVEL = os.getenv('LOG_LEVEL', 'INFO')
+    MAX_CONVERSATIONS = int(os.getenv('MAX_CONVERSATIONS', '100'))
+
+    # Database settings
+    DATABASE_URL = os.getenv('DATABASE_URL')
+    REDIS_URL = os.getenv('REDIS_URL')
+
+    # Feature flags
+    ENABLE_ANALYTICS = os.getenv('ENABLE_ANALYTICS', 'true').lower() == 'true'
+
+# main.py
+from config import Config
+
+agent = MyAgent(
+    api_key=Config.API_KEY,
+    customer_id=Config.CUSTOMER_ID,
+    platform_url=Config.PLATFORM_URL
+)
+```
+
+## Health Checks
+
+### Basic Health Check
+
+```python
+from fastapi import FastAPI
+from starlette.responses import JSONResponse
+
+app = FastAPI()
+
+@app.get("/health")
+async def health_check():
+    """Health check endpoint"""
+    # Check agent status
+    is_healthy = agent.is_connected()
+
+    if is_healthy:
+        return JSONResponse({
+            "status": "healthy",
+            "active_conversations": len(agent.conversations),
+            "uptime": agent.get_uptime()
+        })
+    else:
+        return JSONResponse(
+            {"status": "unhealthy", "error": "Agent not connected"},
+            status_code=503
+        )
+
+@app.get("/ready")
+async def readiness_check():
+    """Readiness check endpoint"""
+    checks = {
+        "agent": agent.is_connected(),
+        "database": check_database_connection(),
+        "redis": check_redis_connection()
+    }
+
+    if all(checks.values()):
+        return JSONResponse({"status": "ready", "checks": checks})
+    else:
+        return JSONResponse(
+            {"status": "not_ready", "checks": checks},
+            status_code=503
+        )
+```
+
+## Monitoring
+
+### Application Monitoring
+
+```python
+# Add monitoring to your agent
+from prometheus_client import start_http_server
+
+class ProductionAgent(ConversimpleAgent):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+
+        # Start metrics server
+        start_http_server(8000)
+
+        # Start health check server
+        self.start_health_server()
+```
+
+## Zero-Downtime Deployment
+
+### Blue-Green Deployment
+
+```bash
+# Deploy new version (green)
+docker run -d --name agent-green my-agent:v2
+
+# Wait for health check
+while ! curl -f http://agent-green:8000/health; do
+    sleep 1
+done
+
+# Switch traffic to green
+kubectl set image deployment/agent agent=my-agent:v2
+
+# Remove old version (blue)
+docker stop agent-blue
+docker rm agent-blue
+```
+
+## Best Practices
+
+### 1. Use Secrets Management
+
+```python
+# AWS Secrets Manager
+import boto3
+import json
+
+def get_secrets():
+    client = boto3.client('secretsmanager')
+    response = client.get_secret_value(SecretId='conversimple/prod')
+    return json.loads(response['SecretString'])
+
+secrets = get_secrets()
+agent = MyAgent(
+    api_key=secrets['api_key'],
+    customer_id=secrets['customer_id']
+)
+```
+
+### 2. Log to Centralized Service
+
+```python
+import logging
+from logging.handlers import SysLogHandler
+
+# Configure logging
+handler = SysLogHandler(address=('logs.papertrailapp.com', 12345))
+logging.getLogger().addHandler(handler)
+```
+
+### 3. Set Resource Limits
+
+```yaml
+# Kubernetes resource limits
+resources:
+  requests:
+    memory: "256Mi"
+    cpu: "250m"
+  limits:
+    memory: "512Mi"
+    cpu: "500m"
+```
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Scaling" icon="chart-line" href="/guides/scaling">
+    Scale your deployment
+  </Card>
+  <Card title="Monitoring" icon="chart-bar" href="/core-concepts/logging-monitoring">
+    Set up monitoring
+  </Card>
+</CardGroup>

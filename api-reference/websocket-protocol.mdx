@@ -1,0 +1,104 @@
+---
+title: "WebSocket Protocol"
+description: "WebSocket message format and protocol details."
+---
+
+## Message Types
+
+### Outgoing (SDK → Platform)
+
+#### register_conversation_tools
+
+Register available tools when agent starts:
+
+```json
+{
+  "type": "register_conversation_tools",
+  "conversation_id": "conv_123",
+  "tools": [
+    {
+      "name": "get_weather",
+      "description": "Get current weather for a location",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "location": {"type": "string"}
+        },
+        "required": ["location"]
+      }
+    }
+  ]
+}
+```
+
+#### tool_call_response
+
+Return tool execution result:
+
+```json
+{
+  "type": "tool_call_response",
+  "call_id": "call_abc123",
+  "result": {
+    "temperature": 72,
+    "condition": "sunny"
+  }
+}
+```
+
+#### tool_call_error
+
+Report tool execution error:
+
+```json
+{
+  "type": "tool_call_error",
+  "call_id": "call_abc123",
+  "error": {
+    "type": "execution_error",
+    "message": "Service unavailable"
+  }
+}
+```
+
+### Incoming (Platform → SDK)
+
+#### tool_call_request
+
+Request tool execution:
+
+```json
+{
+  "type": "tool_call_request",
+  "call_id": "call_abc123",
+  "conversation_id": "conv_123",
+  "tool_name": "get_weather",
+  "parameters": {
+    "location": "San Francisco"
+  }
+}
+```
+
+#### conversation_lifecycle
+
+Conversation started or ended:
+
+```json
+{
+  "type": "conversation_lifecycle",
+  "event": "started",
+  "conversation_id": "conv_123",
+  "timestamp": "2024-01-15T10:30:00Z"
+}
+```
+
+## Connection Flow
+
+1. Agent connects to WebSocket
+2. Platform authenticates agent
+3. Agent registers tools
+4. Platform sends tool_call_request
+5. Agent executes tool
+6. Agent sends tool_call_response
+7. Repeat 4-6 during conversation
+8. Platform sends conversation_lifecycle (ended)

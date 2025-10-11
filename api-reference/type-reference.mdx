@@ -1,0 +1,65 @@
+---
+title: "Type Reference"
+description: "Python type hints and JSON schema mappings."
+---
+
+## Supported Types
+
+### Basic Types
+
+| Python Type | JSON Schema | Example |
+|-------------|-------------|---------|
+| `str` | `{"type": "string"}` | `"hello"` |
+| `int` | `{"type": "integer"}` | `42` |
+| `float` | `{"type": "number"}` | `3.14` |
+| `bool` | `{"type": "boolean"}` | `true` |
+
+### Complex Types
+
+| Python Type | JSON Schema | Example |
+|-------------|-------------|---------|
+| `list` | `{"type": "array"}` | `[1, 2, 3]` |
+| `dict` | `{"type": "object"}` | `{"key": "value"}` |
+| `Optional[T]` | Same as T | `None` or value |
+
+## Tool Type Examples
+
+### String Parameter
+
+```python
+@tool("Get user by name")
+def get_user(self, name: str) -> dict:
+    pass
+
+# JSON Schema:
+{
+  "name": {"type": "string"}
+}
+```
+
+### Optional Parameter
+
+```python
+@tool("Search products")
+def search(self, query: str, limit: int = 10) -> dict:
+    pass
+
+# JSON Schema:
+{
+  "query": {"type": "string"},
+  "limit": {"type": "integer"}
+}
+# "limit" not in required array
+```
+
+### Return Types
+
+Tools should return `dict`:
+
+```python
+# ✅ Good
+return {"result": "success", "data": {...}}
+
+# ❌ Bad
+return "success"  # Not a dict
+```

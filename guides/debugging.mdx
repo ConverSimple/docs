@@ -1,0 +1,311 @@
+---
+title: "Debugging"
+description: "Debug your voice agents effectively with logging, testing, and troubleshooting techniques."
+---
+
+## Overview
+
+When issues arise with your voice agent, effective debugging techniques help you identify and fix problems quickly.
+
+## Enable Debug Logging
+
+### Increase Log Verbosity
+
+```python
+import logging
+
+# Enable debug logging
+logging.basicConfig(level=logging.DEBUG)
+
+# SDK debug logs
+logging.getLogger('conversimple').setLevel(logging.DEBUG)
+
+# Your agent
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
+```
+
+### Log Tool Execution
+
+```python
+@tool("Get customer")
+def get_customer(self, customer_id: str) -> dict:
+    """Tool with debug logging"""
+    logger.debug(f"get_customer called with: {customer_id}")
+
+    try:
+        customer = database.get(customer_id)
+        logger.debug(f"Customer found: {customer}")
+        return customer
+    except Exception as e:
+        logger.error(f"Error getting customer: {e}", exc_info=True)
+        raise
+```
+
+## Common Issues
+
+### 1. Connection Problems
+
+**Symptom:** Agent won't connect to platform
+
+**Debug:**
+```python
+# Test platform connectivity
+import aiohttp
+
+async def test_connection():
+    try:
+        async with aiohttp.ClientSession() as session:
+            async with session.get('https://app.conversimple.com/health') as response:
+                print(f"Platform status: {response.status}")
+    except Exception as e:
+        print(f"Connection error: {e}")
+```
+
+**Common Causes:**
+- Invalid API key or customer ID
+- Network connectivity issues
+- Firewall blocking WebSocket connections
+
+**Solution:**
+```python
+# Verify credentials
+print(f"API Key: {api_key[:10]}...")  # Print first 10 chars
+print(f"Customer ID: {customer_id}")
+
+# Test with verbose logging
+agent = MyAgent(api_key=api_key, customer_id=customer_id)
+await agent.start()  # Watch logs for connection details
+```
+
+### 2. Tool Not Being Called
+
+**Symptom:** AI doesn't call your tool
+
+**Debug:**
+```python
+# Verify tool registration
+agent = MyAgent(api_key=api_key, customer_id=customer_id)
+await agent.start()
+
+# Check registered tools
+print("Registered tools:")
+for tool in agent._registered_tools:
+    print(f"  - {tool['name']}: {tool['description']}")
+```
+
+**Common Causes:**
+- Tool description unclear
+- Tool not registered properly
+- Tool name conflicts
+
+**Solution:**
+```python
+# Use clear, descriptive tool descriptions
+@tool("Get the current weather for a specific city or location")
+def get_weather(self, location: str) -> dict:
+    """Clear description helps AI understand when to use the tool"""
+    return {"temperature": 72, "condition": "sunny"}
+```
+
+### 3. Tool Execution Errors
+
+**Symptom:** Tool throws exceptions
+
+**Debug:**
+```python
+# Add comprehensive error handling
+@tool("Process payment")
+def process_payment(self, amount: float) -> dict:
+    """Tool with error handling"""
+    try:
+        logger.info(f"Processing payment: ${amount}")
+
+        # Validate input
+        if amount <= 0:
+            raise ValueError("Amount must be positive")
+
+        # Process payment
+        result = payment_service.charge(amount)
+
+        logger.info(f"Payment successful: {result.id}")
+        return {"success": True, "transaction_id": result.id}
+
+    except ValueError as e:
+        logger.error(f"Validation error: {e}")
+        return {"error": "invalid_amount", "message": str(e)}
+
+    except PaymentError as e:
+        logger.error(f"Payment failed: {e}")
+        return {"error": "payment_failed", "message": str(e)}
+
+    except Exception as e:
+        logger.exception(f"Unexpected error: {e}")
+        return {"error": "internal_error", "message": "Please try again"}
+```
+
+## Debugging Tools
+
+### Interactive Debugging
+
+Use Python debugger:
+
+```python
+import pdb
+
+@tool("Debug this tool")
+def my_tool(self, param: str) -> dict:
+    """Tool with breakpoint"""
+    # Set breakpoint
+    pdb.set_trace()
+
+    # Debug from here
+    result = some_function(param)
+    return result
+```
+
+### Print Debugging
+
+Add strategic print statements:
+
+```python
+def on_conversation_started(self, conversation_id: str):
+    """Debug conversation start"""
+    print(f"=== Conversation Started ===")
+    print(f"ID: {conversation_id}")
+    print(f"Registered tools: {len(self._registered_tools)}")
+    print(f"Active conversations: {len(self.conversations)}")
+```
+
+### Test Mode
+
+Create a test mode for debugging:
+
+```python
+class MyAgent(ConversimpleAgent):
+    def __init__(self, debug=False, **kwargs):
+        super().__init__(**kwargs)
+        self.debug = debug
+
+    @tool("Test tool")
+    def my_tool(self, param: str) -> dict:
+        """Tool with debug mode"""
+        if self.debug:
+            print(f"DEBUG: my_tool called")
+            print(f"DEBUG: param = {param}")
+
+        result = self.process(param)
+
+        if self.debug:
+            print(f"DEBUG: result = {result}")
+
+        return result
+
+# Use debug mode
+agent = MyAgent(debug=True, api_key=api_key, customer_id=customer_id)
+```
+
+## Checking State
+
+### Inspect Conversation State
+
+```python
+def debug_state(self, conversation_id: str):
+    """Print current conversation state"""
+    state = self.conversations.get(conversation_id)
+
+    if not state:
+        print(f"No state found for {conversation_id}")
+        return
+
+    print(f"=== Conversation State: {conversation_id} ===")
+    print(json.dumps(state, indent=2, default=str))
+```
+
+## Testing Individual Tools
+
+### Test Tools Directly
+
+```python
+# Test tool without running full agent
+agent = MyAgent(api_key="test", customer_id="test")
+
+# Call tool directly
+result = agent.get_weather("San Francisco")
+print(f"Result: {result}")
+
+# Verify result format
+assert "temperature" in result
+assert "condition" in result
+```
+
+## Best Practices
+
+### 1. Use Structured Logging
+
+```python
+logger.info("Processing payment", extra={
+    "amount": amount,
+    "customer_id": customer_id,
+    "conversation_id": conversation_id
+})
+```
+
+### 2. Add Error Context
+
+```python
+try:
+    result = api.call()
+except Exception as e:
+    logger.error(
+        "API call failed",
+        extra={
+            "error": str(e),
+            "endpoint": endpoint,
+            "params": params
+        },
+        exc_info=True  # Include stack trace
+    )
+```
+
+### 3. Test Tools in Isolation
+
+```python
+# Test each tool independently
+def test_my_tool():
+    agent = MyAgent(api_key="test", customer_id="test")
+    result = agent.my_tool("test_input")
+    assert result["success"] == True
+```
+
+## Troubleshooting Checklist
+
+When debugging issues:
+
+- [ ] Check logs for errors
+- [ ] Verify API credentials
+- [ ] Test tool functions directly
+- [ ] Verify tool descriptions are clear
+- [ ] Check conversation state
+- [ ] Test with debug logging enabled
+- [ ] Review error handling in tools
+
+## Getting Help
+
+If you're still stuck:
+
+1. Check Conversimple documentation
+2. Review logs for specific error messages
+3. Test with minimal example agent
+4. Contact support with logs and details
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Error Handling" icon="shield" href="/core-concepts/error-handling">
+    Handle errors gracefully
+  </Card>
+  <Card title="Logging" icon="file-text" href="/core-concepts/logging-monitoring">
+    Set up proper logging
+  </Card>
+</CardGroup>

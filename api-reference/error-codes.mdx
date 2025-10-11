@@ -1,0 +1,37 @@
+---
+title: "Error Codes"
+description: "Complete error code reference."
+---
+
+## Authentication Errors
+
+| Code | Description | Action |
+|------|-------------|--------|
+| `auth_invalid_key` | Invalid API key | Check API key |
+| `auth_key_revoked` | API key revoked | Generate new key |
+| `auth_customer_mismatch` | Wrong customer ID | Verify customer ID |
+
+## Connection Errors
+
+| Code | Description | Action |
+|------|-------------|--------|
+| `connection_failed` | Connection failed | Check network |
+| `connection_timeout` | Connection timeout | Increase timeout |
+| `connection_closed` | Connection closed | Reconnect |
+
+## Tool Errors
+
+| Code | Description | Action |
+|------|-------------|--------|
+| `tool_not_found` | Tool doesn't exist | Check tool name |
+| `tool_execution_error` | Tool threw exception | Fix tool code |
+| `tool_timeout` | Tool took too long | Optimize tool |
+| `invalid_parameters` | Wrong parameters | Validate inputs |
+
+## Platform Errors
+
+| Code | Description | Action |
+|------|-------------|--------|
+| `service_unavailable` | Platform unavailable | Retry later |
+| `rate_limit_exceeded` | Too many requests | Slow down |
+| `internal_error` | Platform error | Contact support |

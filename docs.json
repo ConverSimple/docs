@@ -14,6 +14,15 @@
         "tab": "Guides",
         "groups": [
           {
+            "group": "Platform Overview",
+            "pages": [
+              "platform-overview/introduction",
+              "platform-overview/how-it-works",
+              "platform-overview/conversation-modes",
+              "platform-overview/use-cases"
+            ]
+          },
+          {
             "group": "Getting Started",
             "pages": [
               "index",
@@ -26,7 +35,33 @@
             "pages": [
               "core-concepts/agent",
               "core-concepts/tools",
-              "core-concepts/events"
+              "core-concepts/events",
+              "core-concepts/authentication",
+              "core-concepts/conversation-lifecycle",
+              "core-concepts/error-handling",
+              "core-concepts/logging-monitoring"
+            ]
+          },
+          {
+            "group": "Advanced Guides",
+            "pages": [
+              "guides/multi-conversation-management",
+              "guides/state-management",
+              "guides/testing-your-agent",
+              "guides/deployment",
+              "guides/scaling",
+              "guides/debugging",
+              "guides/best-practices",
+              "guides/security"
+            ]
+          },
+          {
+            "group": "Integration Patterns",
+            "pages": [
+              "integrations/databases",
+              "integrations/external-apis",
+              "integrations/crm-systems",
+              "integrations/notification-services"
             ]
           },
           {
@@ -35,6 +70,15 @@
               "examples/simple-agent",
               "examples/customer-service-agent",
               "examples/booking-agent"
+            ]
+          },
+          {
+            "group": "Troubleshooting",
+            "pages": [
+              "troubleshooting/connection-issues",
+              "troubleshooting/tool-execution-errors",
+              "troubleshooting/performance-issues",
+              "troubleshooting/faq"
             ]
           }
         ]
@@ -47,7 +91,11 @@
             "pages": [
               "api-reference/conversimple-agent",
               "api-reference/tool-decorators",
-              "api-reference/event-callbacks"
+              "api-reference/event-callbacks",
+              "api-reference/configuration",
+              "api-reference/websocket-protocol",
+              "api-reference/error-codes",
+              "api-reference/type-reference"
             ]
           }
         ]
@@ -82,7 +130,7 @@
     "primary": {
       "type": "button",
       "label": "Dashboard",
-      "href": "https://platform.conversimple.com"
+      "href": "https://app.conversimple.com"
     }
   },
   "footer": {

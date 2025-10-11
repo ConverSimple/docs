@@ -1,0 +1,186 @@
+---
+title: "Connection Issues"
+description: "Troubleshoot WebSocket connection problems with the Conversimple platform."
+---
+
+## Agent Won't Connect
+
+### Symptom
+Agent fails to connect to the platform
+
+### Common Causes
+
+1. **Invalid Credentials**
+2. **Network Issues**
+3. **Firewall Blocking**
+4. **Platform Unavailable**
+
+### Solutions
+
+#### 1. Verify Credentials
+
+```python
+# Check API key format
+api_key = os.getenv('CONVERSIMPLE_API_KEY')
+print(f"API Key: {api_key[:10]}...")  # Should start with cs_live or cs_test
+
+# Check customer ID
+customer_id = os.getenv('CONVERSIMPLE_CUSTOMER_ID')
+print(f"Customer ID: {customer_id}")  # Should start with cust_
+```
+
+#### 2. Test Platform Connectivity
+
+```python
+import aiohttp
+
+async def test_connection():
+    try:
+        async with aiohttp.ClientSession() as session:
+            async with session.get('https://app.conversimple.com/health') as response:
+                print(f"Platform status: {response.status}")  # Should be 200
+    except Exception as e:
+        print(f"Connection error: {e}")
+
+asyncio.run(test_connection())
+```
+
+#### 3. Check WebSocket URL
+
+```python
+# Correct URLs
+production_url = "wss://app.conversimple.com/sdk/websocket"  # Production
+dev_url = "ws://localhost:4000/sdk/websocket"  # Local development
+
+# Verify your URL
+agent = ConversimpleAgent(
+    api_key=api_key,
+    customer_id=customer_id,
+    platform_url=production_url  # Check this is correct
+)
+```
+
+## Connection Drops
+
+### Symptom
+Agent connects but disconnects frequently
+
+### Solutions
+
+#### Enable Auto-Reconnect
+
+```python
+class RobustAgent(ConversimpleAgent):
+    async def start_with_retry(self, max_retries=3):
+        """Start with automatic retry"""
+        for attempt in range(max_retries):
+            try:
+                await self.start()
+                print("✅ Connected successfully")
+                return
+            except Exception as e:
+                if attempt < max_retries - 1:
+                    wait_time = 2 ** attempt
+                    print(f"Retry in {wait_time}s...")
+                    await asyncio.sleep(wait_time)
+                else:
+                    raise
+```
+
+#### Monitor Connection
+
+```python
+class MonitoredAgent(ConversimpleAgent):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.connected = False
+
+    async def start(self):
+        """Track connection status"""
+        await super().start()
+        self.connected = True
+        print("Connected to platform")
+
+    def on_error(self, error_type, message, details):
+        """Handle disconnection"""
+        if error_type == "connection_error":
+            self.connected = False
+            print("Lost connection - will retry")
+```
+
+## Timeout Errors
+
+### Symptom
+Connection attempts timeout
+
+### Solutions
+
+#### Increase Timeout
+
+```python
+agent = ConversimpleAgent(
+    api_key=api_key,
+    customer_id=customer_id,
+    connection_timeout=30  # Increase to 30 seconds
+)
+```
+
+#### Check Network
+
+```bash
+# Test DNS resolution
+nslookup app.conversimple.com
+
+# Test connectivity
+ping app.conversimple.com
+
+# Test WebSocket
+curl -i -N -H "Connection: Upgrade" \
+  -H "Upgrade: websocket" \
+  https://app.conversimple.com/sdk/websocket
+```
+
+## Firewall Issues
+
+### Symptom
+Connection blocked by firewall
+
+### Solutions
+
+#### Allow WebSocket Connections
+
+```bash
+# Allow outbound WebSocket connections on port 443
+sudo ufw allow out 443/tcp
+
+# For corporate firewalls, ensure these are allowed:
+# - Outbound HTTPS (443)
+# - WebSocket protocol (wss://)
+```
+
+## Quick Fixes
+
+| Issue | Quick Fix |
+|-------|-----------|
+| Invalid API key | Verify key in dashboard |
+| Wrong URL | Use `wss://app.conversimple.com/sdk/websocket` |
+| Timeout | Increase timeout to 30s |
+| Firewall | Allow port 443 outbound |
+| Platform down | Check status page |
+
+## Still Having Issues?
+
+If problems persist:
+
+1. Enable debug logging
+2. Check platform status page
+3. Contact support with logs
+
+<CardGroup cols={2}>
+  <Card title="Debugging" icon="bug" href="/guides/debugging">
+    Debug your agent
+  </Card>
+  <Card title="Error Handling" icon="shield" href="/core-concepts/error-handling">
+    Handle errors gracefully
+  </Card>
+</CardGroup>

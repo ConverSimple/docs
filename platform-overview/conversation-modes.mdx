@@ -1,0 +1,268 @@
+---
+title: "Conversation Modes"
+description: "Understanding STT and STS conversation modes and when to use each."
+---
+
+## Overview
+
+Conversimple supports two conversation modes, each optimized for different use cases:
+
+1. **STT Mode** (Speech-to-Text → LLM → Text-to-Speech): Traditional pipeline with maximum flexibility
+2. **STS Mode** (Speech-to-Speech): Unified pipeline for ultra-low latency
+
+## STT Mode: Maximum Flexibility
+
+### Architecture
+
+```
+User Speech
+    ↓
+Speech-to-Text Service (Gemini Live STT)
+    ↓ Transcription
+Large Language Model (Gemini 2.5 Pro)
+    ↓ Generated Text Response
+Text-to-Speech Service (Gemini TTS)
+    ↓ Audio Output
+User Speaker
+```
+
+### When to Use STT Mode
+
+<CardGroup cols={2}>
+  <Card title="Custom LLM Logic" icon="code">
+    Need to customize LLM behavior, prompts, or temperature settings
+  </Card>
+  <Card title="Multi-Provider" icon="plug">
+    Want to use different providers for STT, LLM, and TTS
+  </Card>
+  <Card title="Processing Pipeline" icon="filter">
+    Need to process or transform text between stages
+  </Card>
+  <Card title="Advanced Control" icon="sliders">
+    Require fine-grained control over each stage
+  </Card>
+</CardGroup>
+
+### Characteristics
+
+**Latency:** 420-1000ms total
+- STT: 100-200ms
+- LLM: 200-500ms
+- TTS: 120-300ms
+
+**Flexibility:** Very High
+- Separate configuration for each service
+- Custom prompt engineering
+- Text transformation between stages
+- Provider mixing (e.g., Deepgram STT + OpenAI LLM + ElevenLabs TTS)
+
+**Use Cases:**
+- Complex conversation logic
+- Custom LLM prompting strategies
+- Multi-language support with specific providers
+- Advanced text processing requirements
+
+### Example: STT Mode Configuration
+
+```python
+from conversimple import ConversimpleAgent, tool
+
+class CustomAgent(ConversimpleAgent):
+    """Agent using STT mode for maximum flexibility"""
+
+    def __init__(self, **kwargs):
+        super().__init__(
+            mode="stt",  # Explicit STT mode
+            stt_provider="gemini_live",
+            llm_provider="gemini_pro",
+            llm_config={
+                "temperature": 0.7,
+                "system_instruction": "You are a helpful assistant..."
+            },
+            tts_provider="gemini_live",
+            **kwargs
+        )
+
+    @tool("Get customer information")
+    def get_customer(self, customer_id: str) -> dict:
+        return {"name": "John", "tier": "premium"}
+```
+
+## STS Mode: Ultra-Low Latency
+
+### Architecture
+
+```
+User Speech
+    ↓
+Gemini Live STS Service
+    ↓ Complete Speech-to-Speech Processing
+User Speaker
+```
+
+### When to Use STS Mode
+
+<CardGroup cols={2}>
+  <Card title="Ultra-Low Latency" icon="bolt">
+    Need the fastest possible response times
+  </Card>
+  <Card title="Natural Flow" icon="comments">
+    Want the most natural conversation dynamics
+  </Card>
+  <Card title="Simplified Stack" icon="layer-group">
+    Prefer fewer moving parts and dependencies
+  </Card>
+  <Card title="Gemini Optimized" icon="sparkles">
+    Leverage Gemini's native speech-to-speech capabilities
+  </Card>
+</CardGroup>
+
+### Characteristics
+
+**Latency:** 200-600ms total
+- Single unified service handles everything
+- ~50% faster than STT mode
+- Better interruption handling
+
+**Flexibility:** Moderate
+- Single provider (currently Gemini Live)
+- Less control over individual stages
+- Function calling fully supported
+- Optimized for conversation flow
+
+**Use Cases:**
+- Customer service chatbots
+- Real-time support agents
+- Interactive voice assistants
+- Natural conversation experiences
+
+### Example: STS Mode Configuration
+
+```python
+from conversimple import ConversimpleAgent, tool
+
+class FastAgent(ConversimpleAgent):
+    """Agent using STS mode for minimal latency"""
+
+    def __init__(self, **kwargs):
+        super().__init__(
+            mode="sts",  # Speech-to-Speech mode
+            sts_provider="gemini_live",
+            system_instruction="You are a helpful assistant...",
+            **kwargs
+        )
+
+    @tool("Get customer information")
+    def get_customer(self, customer_id: str) -> dict:
+        return {"name": "John", "tier": "premium"}
+```
+
+## Comparison
+
+| Feature | STT Mode | STS Mode |
+|---------|----------|----------|
+| **Latency** | 420-1000ms | 200-600ms |
+| **Providers** | Mix & match | Single provider |
+| **Flexibility** | Very High | Moderate |
+| **Setup Complexity** | Higher | Lower |
+| **Function Calling** | ✅ Supported | ✅ Supported |
+| **Interruptions** | Good | Excellent |
+| **Custom Prompts** | Full control | System instruction |
+| **Multi-language** | Provider-specific | Gemini languages |
+| **Cost** | Per-service pricing | Single service pricing |
+
+## Function Calling Support
+
+Both modes fully support function calling:
+
+### STT Mode Function Calling
+
+```
+User: "Book me a flight to NYC"
+    ↓ STT
+"Book me a flight to NYC"
+    ↓ LLM (decides to call tool)
+tool_call: book_flight(destination="NYC")
+    ↓ Your Agent
+{"booking_id": "ABC123", "price": 450}
+    ↓ LLM (generates response)
+"I've booked your flight to NYC for $450"
+    ↓ TTS
+Audio: "I've booked your flight..."
+```
+
+### STS Mode Function Calling
+
+```
+User: "Book me a flight to NYC"
+    ↓ Gemini Live STS
+tool_call: book_flight(destination="NYC")
+    ↓ Your Agent
+{"booking_id": "ABC123", "price": 450}
+    ↓ Gemini Live STS
+Audio: "I've booked your flight..."
+```
+
+Function calling works identically in both modes - the only difference is the processing pipeline.
+
+## Choosing the Right Mode
+
+### Choose STT Mode If:
+
+- You need to use specific providers (e.g., OpenAI, Deepgram, ElevenLabs)
+- You require custom LLM configuration or prompt engineering
+- You need to process or transform text between stages
+- You want maximum control over each component
+- Latency under 1 second is acceptable
+
+### Choose STS Mode If:
+
+- Latency is critical (aim for < 600ms response time)
+- You want the simplest architecture
+- Natural conversation flow is a priority
+- You're comfortable with Gemini Live as your provider
+- You prefer fewer dependencies to manage
+
+## Switching Between Modes
+
+You can easily switch between modes by changing the configuration:
+
+```python
+# Development: Use STS for fast iteration
+dev_agent = MyAgent(mode="sts", sts_provider="gemini_live")
+
+# Production: Switch to STT for custom LLM
+prod_agent = MyAgent(
+    mode="stt",
+    stt_provider="deepgram",
+    llm_provider="openai",
+    tts_provider="elevenlabs"
+)
+```
+
+Your tool definitions and business logic remain unchanged.
+
+## Best Practices
+
+### For STT Mode
+- Optimize LLM prompts for your use case
+- Consider provider costs and rate limits
+- Test latency across the full pipeline
+- Monitor each service independently
+
+### For STS Mode
+- Use for latency-critical applications
+- Leverage Gemini's natural conversation capabilities
+- Test interruption handling thoroughly
+- Monitor overall conversation quality
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Use Cases" icon="lightbulb" href="/platform-overview/use-cases">
+    Explore real-world applications
+  </Card>
+  <Card title="Authentication" icon="key" href="/core-concepts/authentication">
+    Set up your API credentials
+  </Card>
+</CardGroup>

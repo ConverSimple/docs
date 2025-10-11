@@ -1,0 +1,233 @@
+---
+title: "Scaling"
+description: "Scale your voice agents to handle growing conversation volume."
+---
+
+## Overview
+
+As your voice agent grows, you'll need to scale to handle more concurrent conversations. This guide covers practical scaling strategies.
+
+## Vertical Scaling
+
+### Increase Resources
+
+Start by adding more resources to your existing server:
+
+```yaml
+# Kubernetes: Increase resources
+resources:
+  requests:
+    memory: "512Mi"  # Was 256Mi
+    cpu: "500m"      # Was 250m
+  limits:
+    memory: "1Gi"    # Was 512Mi
+    cpu: "1000m"     # Was 500m
+```
+
+**When to use:**
+- Conversation volume growing but manageable
+- Simple to implement
+- Cost-effective for moderate growth
+
+**Limits:**
+- Single server can only scale so far
+- No redundancy
+
+## Horizontal Scaling
+
+### Multiple Instances
+
+Run multiple agent instances:
+
+```yaml
+# Kubernetes: Scale replicas
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: conversimple-agent
+spec:
+  replicas: 5  # Run 5 instances
+```
+
+```bash
+# Docker Compose: Scale services
+docker-compose up --scale agent=5
+```
+
+**Benefits:**
+- Handle more concurrent conversations
+- Built-in redundancy
+- Easy to scale up/down
+
+## Load Balancing
+
+Distribute conversations across instances:
+
+```python
+# Simple round-robin load balancer
+class LoadBalancer:
+    def __init__(self, agent_urls: list):
+        self.agents = cycle(agent_urls)
+
+    def get_next_agent(self):
+        """Get next agent in rotation"""
+        return next(self.agents)
+
+# Usage
+balancer = LoadBalancer([
+    "http://agent-1:8000",
+    "http://agent-2:8000",
+    "http://agent-3:8000",
+])
+
+# Route new conversation
+agent_url = balancer.get_next_agent()
+```
+
+## Auto-Scaling
+
+### Kubernetes Horizontal Pod Autoscaler
+
+Automatically scale based on load:
+
+```yaml
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: agent-autoscaler
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: conversimple-agent
+  minReplicas: 2
+  maxReplicas: 10
+  metrics:
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: 70
+```
+
+**This will:**
+- Start with 2 instances minimum
+- Scale up to 10 instances maximum
+- Add instances when CPU > 70%
+- Remove instances when CPU < 70%
+
+## Performance Optimization
+
+### Connection Pooling
+
+Reuse database connections:
+
+```python
+from sqlalchemy import create_engine
+from sqlalchemy.pool import QueuePool
+
+# Create connection pool
+engine = create_engine(
+    DATABASE_URL,
+    poolclass=QueuePool,
+    pool_size=10,
+    max_overflow=20
+)
+
+class OptimizedAgent(ConversimpleAgent):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.db = engine
+```
+
+### Caching
+
+Cache frequently accessed data:
+
+```python
+from functools import lru_cache
+
+@lru_cache(maxsize=1000)
+def get_product(product_id: str):
+    """Cached product lookup"""
+    return database.query(f"SELECT * FROM products WHERE id = '{product_id}'")
+```
+
+## Monitoring Capacity
+
+### Track Key Metrics
+
+Monitor these metrics to know when to scale:
+
+```python
+class MonitoredAgent(ConversimpleAgent):
+    def get_metrics(self):
+        return {
+            "active_conversations": len(self.conversations),
+            "cpu_percent": psutil.cpu_percent(),
+            "memory_percent": psutil.virtual_memory().percent,
+            "uptime_seconds": time.time() - self.start_time
+        }
+
+# Alert when capacity reached
+if metrics["active_conversations"] > 80:
+    send_alert("Consider scaling up - 80+ conversations active")
+```
+
+## Best Practices
+
+### 1. Start Small, Scale as Needed
+
+```python
+# Development: Single instance
+replicas: 1
+
+# Production: Start with 2-3, auto-scale as needed
+replicas: 2
+maxReplicas: 10
+```
+
+### 2. Set Conversation Limits
+
+```python
+# Prevent overload
+class LimitedAgent(ConversimpleAgent):
+    MAX_CONVERSATIONS = 50
+
+    async def start_conversation(self, conv_id):
+        if len(self.conversations) >= self.MAX_CONVERSATIONS:
+            raise CapacityError("At capacity")
+        await super().start_conversation(conv_id)
+```
+
+### 3. Monitor and Alert
+
+```python
+# Alert on high load
+if active_conversations > (MAX_CONVERSATIONS * 0.8):
+    logger.warning("Running at 80% capacity")
+    send_alert("Consider scaling up")
+```
+
+## Scaling Checklist
+
+When scaling your agent:
+
+- [ ] Set up health checks
+- [ ] Configure auto-scaling rules
+- [ ] Set resource limits
+- [ ] Enable monitoring
+- [ ] Test with load testing
+- [ ] Document scaling procedures
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Deployment" icon="rocket" href="/guides/deployment">
+    Deploy your agent
+  </Card>
+  <Card title="Monitoring" icon="chart-line" href="/core-concepts/logging-monitoring">
+    Monitor your agent
+  </Card>
+</CardGroup>

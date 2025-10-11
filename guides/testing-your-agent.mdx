@@ -1,0 +1,300 @@
+---
+title: "Testing Your Agent"
+description: "Learn how to test your voice agents effectively with unit tests, integration tests, and mock conversations."
+---
+
+## Overview
+
+Testing voice agents requires a different approach than traditional applications. This guide covers strategies for testing tools, conversation flows, and integration with the Conversimple platform.
+
+## Unit Testing Tools
+
+### Basic Tool Testing
+
+Test individual tools in isolation:
+
+```python
+import pytest
+from your_agent import MyAgent
+
+@pytest.fixture
+def agent():
+    """Create agent instance for testing"""
+    return MyAgent(
+        api_key="test-key",
+        customer_id="test-customer"
+    )
+
+def test_get_weather_tool(agent):
+    """Test weather tool"""
+    result = agent.get_weather("San Francisco")
+
+    assert result["location"] == "San Francisco"
+    assert "temperature" in result
+    assert "condition" in result
+
+def test_get_weather_invalid_location(agent):
+    """Test weather tool with invalid location"""
+    result = agent.get_weather("")
+
+    assert "error" in result
+```
+
+### Testing Async Tools
+
+Test asynchronous tools:
+
+```python
+import pytest
+import asyncio
+
+@pytest.mark.asyncio
+async def test_send_email_tool(agent):
+    """Test async email tool"""
+    result = await agent.send_email(
+        email="test@example.com",
+        subject="Test",
+        body="Test message"
+    )
+
+    assert result["success"] is True
+    assert "message_id" in result
+```
+
+## Mocking External Services
+
+### Mock Database Calls
+
+```python
+from unittest.mock import Mock, patch
+
+def test_get_customer_tool(agent):
+    """Test customer lookup with mocked database"""
+    # Mock the database
+    with patch('your_agent.database.get_customer') as mock_db:
+        mock_db.return_value = {
+            "id": "C123",
+            "name": "John Doe",
+            "email": "john@example.com"
+        }
+
+        result = agent.get_customer("C123")
+
+        assert result["name"] == "John Doe"
+        mock_db.assert_called_once_with("C123")
+```
+
+### Mock API Calls
+
+```python
+import responses
+
+@responses.activate
+def test_api_tool(agent):
+    """Test tool that calls external API"""
+    # Mock the API response
+    responses.add(
+        responses.GET,
+        'https://api.example.com/products/P123',
+        json={"id": "P123", "name": "Widget", "price": 29.99},
+        status=200
+    )
+
+    result = agent.get_product("P123")
+
+    assert result["name"] == "Widget"
+    assert result["price"] == 29.99
+```
+
+## Testing Conversation Flow
+
+### Mock Conversation Events
+
+```python
+def test_conversation_lifecycle(agent):
+    """Test conversation lifecycle"""
+    conversation_id = "test-conv-123"
+
+    # Simulate conversation start
+    agent.on_conversation_started(conversation_id)
+
+    # Verify state initialized
+    state = agent.conversations.get(conversation_id)
+    assert state is not None
+    assert state["authenticated"] is False
+
+    # Simulate tool calls
+    result = agent.login("testuser", "password123")
+    assert result["success"] is True
+
+    # Verify state updated
+    state = agent.conversations.get(conversation_id)
+    assert state["authenticated"] is True
+
+    # Simulate conversation end
+    agent.on_conversation_ended(conversation_id)
+
+    # Verify cleanup
+    assert conversation_id not in agent.conversations
+```
+
+### Testing State Management
+
+```python
+def test_stateful_workflow(agent):
+    """Test multi-step workflow"""
+    conv_id = "test-conv"
+    agent.on_conversation_started(conv_id)
+
+    # Step 1: Start booking
+    result1 = agent.start_booking()
+    state = agent.get_state(conv_id)
+    assert state["workflow_step"] == "collecting_dates"
+
+    # Step 2: Set dates
+    result2 = agent.set_dates("2024-01-01", "2024-01-05")
+    state = agent.get_state(conv_id)
+    assert state["workflow_step"] == "collecting_guests"
+    assert state["workflow_data"]["check_in"] == "2024-01-01"
+
+    # Step 3: Complete booking
+    result3 = agent.confirm_booking()
+    state = agent.get_state(conv_id)
+    assert state["workflow_step"] == "completed"
+```
+
+## Integration Testing
+
+### Test with Mock Platform
+
+```python
+from conversimple.testing import MockPlatform
+
+@pytest.mark.asyncio
+async def test_agent_integration():
+    """Test agent with mock platform"""
+    # Create mock platform
+    platform = MockPlatform()
+
+    # Create and start agent
+    agent = MyAgent(
+        api_key="test-key",
+        customer_id="test-customer",
+        platform_url=platform.url
+    )
+
+    await agent.start()
+
+    # Simulate tool call from platform
+    response = await platform.call_tool(
+        agent_id=agent.agent_id,
+        tool_name="get_weather",
+        parameters={"location": "Boston"}
+    )
+
+    assert response["temperature"] > 0
+    assert "condition" in response
+
+    await agent.stop()
+```
+
+## Test Fixtures
+
+### Reusable Fixtures
+
+```python
+import pytest
+
+@pytest.fixture
+def mock_database():
+    """Mock database with test data"""
+    db = Mock()
+    db.get_customer.return_value = {"id": "C123", "name": "Test User"}
+    db.get_product.return_value = {"id": "P456", "name": "Test Product"}
+    return db
+
+@pytest.fixture
+def agent_with_mocks(mock_database):
+    """Agent with mocked dependencies"""
+    agent = MyAgent(api_key="test-key", customer_id="test-customer")
+    agent.database = mock_database
+    return agent
+
+def test_with_fixtures(agent_with_mocks):
+    """Use fixtures in tests"""
+    result = agent_with_mocks.get_customer("C123")
+    assert result["name"] == "Test User"
+```
+
+## Testing Error Handling
+
+### Test Error Cases
+
+```python
+def test_tool_handles_errors(agent):
+    """Test tool error handling"""
+    # Mock database to raise exception
+    with patch('your_agent.database.get_customer', side_effect=DatabaseError("Connection failed")):
+        result = agent.get_customer("C123")
+
+        # Verify graceful error handling
+        assert "error" in result
+        assert result["error"] == "service_unavailable"
+```
+
+## Best Practices
+
+### 1. Test Each Tool
+
+```python
+# Test happy path
+def test_tool_success(agent):
+    result = agent.my_tool(valid_input)
+    assert result["success"] is True
+
+# Test error cases
+def test_tool_invalid_input(agent):
+    result = agent.my_tool(invalid_input)
+    assert "error" in result
+
+# Test edge cases
+def test_tool_edge_case(agent):
+    result = agent.my_tool(edge_case_input)
+    assert result is not None
+```
+
+### 2. Use Test Data
+
+```python
+# fixtures/test_data.py
+TEST_CUSTOMERS = [
+    {"id": "C1", "name": "Alice"},
+    {"id": "C2", "name": "Bob"},
+]
+
+TEST_PRODUCTS = [
+    {"id": "P1", "name": "Widget", "price": 9.99},
+    {"id": "P2", "name": "Gadget", "price": 19.99},
+]
+```
+
+### 3. Test Coverage
+
+```bash
+# Run tests with coverage
+pytest --cov=your_agent tests/
+
+# Generate coverage report
+pytest --cov=your_agent --cov-report=html tests/
+```
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Debugging" icon="bug" href="/guides/debugging">
+    Debug issues effectively
+  </Card>
+  <Card title="Best Practices" icon="star" href="/guides/best-practices">
+    Production best practices
+  </Card>
+</CardGroup>

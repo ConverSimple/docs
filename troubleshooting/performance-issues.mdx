@@ -1,0 +1,105 @@
+---
+title: "Performance Issues"
+description: "Troubleshoot slow response times and performance problems."
+---
+
+## Slow Tool Execution
+
+### Symptom
+Tools take too long to execute
+
+### Solutions
+
+#### 1. Use Async for I/O
+
+```python
+# ❌ Slow - blocks event loop
+@tool("Send email")
+def send_email(self, email: str):
+    return email_service.send(email)  # Blocking
+
+# ✅ Fast - non-blocking
+@tool_async("Send email")
+async def send_email(self, email: str):
+    return await email_service.send_async(email)
+```
+
+#### 2. Add Caching
+
+```python
+from functools import lru_cache
+
+@lru_cache(maxsize=100)
+@tool("Get product")
+def get_product(self, product_id: str):
+    """Cached product lookup"""
+    return database.get(product_id)
+```
+
+#### 3. Optimize Database Queries
+
+```python
+# ❌ Slow - N+1 queries
+def get_orders(self, customer_id: str):
+    orders = db.query("SELECT * FROM orders WHERE customer_id = ?", customer_id)
+    for order in orders:
+        order['items'] = db.query("SELECT * FROM items WHERE order_id = ?", order['id'])
+
+# ✅ Fast - single query with join
+def get_orders(self, customer_id: str):
+    return db.query("""
+        SELECT o.*, i.*
+        FROM orders o
+        LEFT JOIN items i ON i.order_id = o.id
+        WHERE o.customer_id = ?
+    """, customer_id)
+```
+
+## High Memory Usage
+
+### Solutions
+
+#### Clean Up State
+
+```python
+def on_conversation_ended(self, conversation_id: str):
+    """Always clean up"""
+    self.conversations.pop(conversation_id, None)
+    self.cache.clear(conversation_id)
+```
+
+## Slow Response Times
+
+### Solutions
+
+#### Monitor Performance
+
+```python
+import time
+
+@tool("My tool")
+def my_tool(self, param: str):
+    """Monitor execution time"""
+    start = time.time()
+
+    result = process(param)
+
+    duration = time.time() - start
+    if duration > 2.0:
+        logger.warning(f"Slow tool: {duration:.2f}s")
+
+    return result
+```
+
+## Quick Fixes
+
+| Issue | Fix |
+|-------|-----|
+| Slow tools | Use async/await |
+| High memory | Clean up state |
+| Slow DB | Optimize queries |
+| Repeated calls | Add caching |
+
+<Card title="Scaling" icon="chart-line" href="/guides/scaling">
+  Scale your agent
+</Card>

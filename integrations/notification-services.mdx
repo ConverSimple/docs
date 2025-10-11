@@ -1,0 +1,63 @@
+---
+title: "Notification Services"
+description: "Send emails and SMS notifications from your agent."
+---
+
+## Email (SendGrid)
+
+```python
+from sendgrid import SendGridAPIClient
+from sendgrid.helpers.mail import Mail
+
+class EmailAgent(ConversimpleAgent):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.sg = SendGridAPIClient(os.getenv('SENDGRID_API_KEY'))
+
+    @tool_async("Send email")
+    async def send_email(self, to: str, subject: str, body: str) -> dict:
+        """Send email via SendGrid"""
+        message = Mail(
+            from_email='noreply@example.com',
+            to_emails=to,
+            subject=subject,
+            html_content=body
+        )
+        try:
+            response = self.sg.send(message)
+            return {"success": True, "message_id": response.headers['X-Message-Id']}
+        except Exception as e:
+            logger.error(f"Email error: {e}")
+            return {"error": "send_failed"}
+```
+
+## SMS (Twilio)
+
+```python
+from twilio.rest import Client
+
+class SMSAgent(ConversimpleAgent):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.twilio = Client(
+            os.getenv('TWILIO_ACCOUNT_SID'),
+            os.getenv('TWILIO_AUTH_TOKEN')
+        )
+
+    @tool("Send SMS")
+    def send_sms(self, to: str, message: str) -> dict:
+        """Send SMS via Twilio"""
+        try:
+            msg = self.twilio.messages.create(
+                body=message,
+                from_=os.getenv('TWILIO_PHONE_NUMBER'),
+                to=to
+            )
+            return {"success": True, "message_id": msg.sid}
+        except Exception as e:
+            return {"error": "send_failed", "message": str(e)}
+```
+
+<Card title="Payment Systems" icon="credit-card" href="/integrations/payment-systems">
+  Payment integration
+</Card>

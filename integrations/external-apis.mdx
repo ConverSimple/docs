@@ -1,0 +1,97 @@
+---
+title: "External API Integration"
+description: "Integrate with REST APIs and third-party services."
+---
+
+## Overview
+
+Connect your agent to external APIs to fetch data, trigger actions, and integrate with third-party services.
+
+## Basic REST API
+
+### GET Request
+
+```python
+import aiohttp
+
+class APIAgent(ConversimpleAgent):
+    @tool_async("Get weather")
+    async def get_weather(self, city: str) -> dict:
+        """Call weather API"""
+        async with aiohttp.ClientSession() as session:
+            async with session.get(
+                f"https://api.weather.com/v1/current",
+                params={"city": city},
+                headers={"Authorization": f"Bearer {API_KEY}"}
+            ) as response:
+                if response.status == 200:
+                    return await response.json()
+                return {"error": "api_error"}
+```
+
+### POST Request
+
+```python
+@tool_async("Create ticket")
+async def create_ticket(self, title: str, description: str) -> dict:
+    """POST to API"""
+    async with aiohttp.ClientSession() as session:
+        async with session.post(
+            "https://api.ticketing.com/v1/tickets",
+            json={"title": title, "description": description},
+            headers={"Authorization": f"Bearer {API_KEY}"}
+        ) as response:
+            return await response.json()
+```
+
+## Error Handling
+
+```python
+@tool_async("Call API")
+async def call_api(self, endpoint: str) -> dict:
+    """API with error handling"""
+    try:
+        async with aiohttp.ClientSession() as session:
+            async with session.get(endpoint, timeout=5) as response:
+                if response.status == 200:
+                    return await response.json()
+                elif response.status == 404:
+                    return {"error": "not_found"}
+                else:
+                    return {"error": "api_error", "status": response.status}
+    except asyncio.TimeoutError:
+        return {"error": "timeout"}
+    except Exception as e:
+        logger.error(f"API error: {e}")
+        return {"error": "internal_error"}
+```
+
+## Rate Limiting
+
+```python
+from aiolimiter import AsyncLimiter
+
+class RateLimitedAgent(ConversimpleAgent):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        # 10 requests per second
+        self.rate_limiter = AsyncLimiter(10, 1)
+
+    @tool_async("Call API")
+    async def call_api(self, endpoint: str) -> dict:
+        """Rate-limited API call"""
+        async with self.rate_limiter:
+            return await self.fetch(endpoint)
+```
+
+## Best Practices
+
+- Use async/await for non-blocking API calls
+- Set appropriate timeouts
+- Handle rate limits
+- Cache responses when possible
+- Log API errors with context
+
+<Card title="Databases" icon="database" href="/integrations/databases">
+  Database integration
+</Card>

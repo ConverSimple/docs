@@ -1,0 +1,373 @@
+---
+title: "Best Practices"
+description: "Production-ready best practices for building reliable voice agents."
+---
+
+## Overview
+
+Follow these best practices to build robust, maintainable voice agents that perform well in production.
+
+## Tool Design
+
+### Write Clear Tool Descriptions
+
+```python
+# ❌ Bad - vague description
+@tool("Get data")
+def get_data(self, id: str) -> dict:
+    pass
+
+# ✅ Good - clear, specific description
+@tool("Get customer information including name, email, and account status")
+def get_customer(self, customer_id: str) -> dict:
+    pass
+```
+
+### Keep Tools Focused
+
+```python
+# ❌ Bad - tool does too much
+@tool("Get customer and process order and send email")
+def do_everything(self, customer_id: str, order_id: str) -> dict:
+    pass
+
+# ✅ Good - separate concerns
+@tool("Get customer information")
+def get_customer(self, customer_id: str) -> dict:
+    pass
+
+@tool("Process customer order")
+def process_order(self, order_id: str) -> dict:
+    pass
+
+@tool("Send email notification")
+async def send_email(self, email: str, message: str) -> dict:
+    pass
+```
+
+### Use Type Hints
+
+```python
+# ✅ Type hints help with validation
+@tool("Create booking")
+def create_booking(
+    self,
+    customer_id: str,
+    date: str,
+    guests: int,
+    special_requests: str = ""
+) -> dict:
+    """
+    Create a restaurant booking
+
+    Args:
+        customer_id: Customer ID
+        date: Booking date (YYYY-MM-DD)
+        guests: Number of guests (1-20)
+        special_requests: Optional special requests
+
+    Returns:
+        Booking confirmation with ID
+    """
+    pass
+```
+
+## Error Handling
+
+### Handle Errors Gracefully
+
+```python
+@tool("Get product")
+def get_product(self, product_id: str) -> dict:
+    """Always handle errors in tools"""
+    try:
+        product = database.get_product(product_id)
+
+        if not product:
+            return {
+                "error": "not_found",
+                "message": "Product not found"
+            }
+
+        return {"success": True, "product": product}
+
+    except DatabaseError:
+        return {
+            "error": "service_unavailable",
+            "message": "Unable to fetch product. Please try again."
+        }
+```
+
+### Return Useful Error Messages
+
+```python
+# ❌ Bad - technical error message
+return {"error": "NullPointerException in line 42"}
+
+# ✅ Good - user-friendly error message
+return {
+    "error": "product_unavailable",
+    "message": "This product is currently unavailable. Would you like to see similar products?"
+}
+```
+
+## State Management
+
+### Clean Up State
+
+```python
+def on_conversation_ended(self, conversation_id: str):
+    """Always clean up"""
+    # Save important data
+    state = self.conversations.get(conversation_id)
+    if state and state.get("cart"):
+        self.save_abandoned_cart(conversation_id, state["cart"])
+
+    # Remove from memory
+    self.conversations.pop(conversation_id, None)
+```
+
+### Keep State Minimal
+
+```python
+# ❌ Bad - storing too much
+self.conversations[conv_id] = {
+    "all_products": database.get_all_products(),  # Don't cache everything
+    "customer_history": get_all_history()         # Too much data
+}
+
+# ✅ Good - store only what's needed
+self.conversations[conv_id] = {
+    "customer_id": customer_id,
+    "current_step": "browsing",
+    "cart_items": []
+}
+```
+
+## Performance
+
+### Use Async for I/O Operations
+
+```python
+# ❌ Bad - blocks event loop
+@tool("Send email")
+def send_email(self, email: str) -> dict:
+    return email_service.send(email)  # Blocking call
+
+# ✅ Good - non-blocking
+@tool_async("Send email")
+async def send_email(self, email: str) -> dict:
+    return await email_service.send_async(email)
+```
+
+### Cache Frequently Accessed Data
+
+```python
+from functools import lru_cache
+from datetime import timedelta
+
+class CachingAgent(ConversimpleAgent):
+    @lru_cache(maxsize=100)
+    @tool("Get product details")
+    def get_product(self, product_id: str) -> dict:
+        """Cached product lookup"""
+        return database.get_product(product_id)
+```
+
+### Set Timeouts
+
+```python
+@tool_async("Call external API")
+async def call_api(self, endpoint: str) -> dict:
+    """API call with timeout"""
+    try:
+        async with aiohttp.ClientSession() as session:
+            async with session.get(endpoint, timeout=5) as response:
+                return await response.json()
+    except asyncio.TimeoutError:
+        return {"error": "timeout", "message": "Request timed out"}
+```
+
+## Security
+
+### Validate Inputs
+
+```python
+@tool("Process payment")
+def process_payment(self, amount: float, card_number: str) -> dict:
+    """Validate inputs before processing"""
+    # Validate amount
+    if amount <= 0:
+        return {"error": "invalid_amount"}
+
+    if amount > 10000:
+        return {"error": "amount_too_large"}
+
+    # Validate card format
+    if not self.is_valid_card(card_number):
+        return {"error": "invalid_card"}
+
+    return payment_service.charge(amount, card_number)
+```
+
+### Don't Log Sensitive Data
+
+```python
+# ❌ Bad - logs sensitive data
+logger.info(f"Processing payment for card {card_number}")
+
+# ✅ Good - logs safely
+logger.info(f"Processing payment for card ending in {card_number[-4:]}")
+```
+
+## Logging
+
+### Log Important Events
+
+```python
+def on_conversation_started(self, conversation_id: str):
+    """Log conversation start"""
+    logger.info(
+        "Conversation started",
+        extra={"conversation_id": conversation_id}
+    )
+
+@tool("Process order")
+def process_order(self, order_id: str) -> dict:
+    """Log tool execution"""
+    logger.info(f"Processing order {order_id}")
+
+    try:
+        result = order_service.process(order_id)
+        logger.info(f"Order {order_id} processed successfully")
+        return result
+    except Exception as e:
+        logger.error(f"Order {order_id} failed: {e}")
+        raise
+```
+
+### Use Appropriate Log Levels
+
+```python
+# DEBUG - Detailed information
+logger.debug(f"Tool parameters: {params}")
+
+# INFO - General information
+logger.info("Conversation started")
+
+# WARNING - Unexpected but handled
+logger.warning("Slow API response: 5s")
+
+# ERROR - Error occurred
+logger.error("Payment processing failed")
+```
+
+## Testing
+
+### Test Each Tool
+
+```python
+def test_get_customer():
+    """Test customer lookup"""
+    agent = MyAgent(api_key="test", customer_id="test")
+
+    # Test successful lookup
+    result = agent.get_customer("C123")
+    assert result["name"] == "John Doe"
+
+    # Test not found
+    result = agent.get_customer("INVALID")
+    assert "error" in result
+```
+
+### Mock External Services
+
+```python
+from unittest.mock import patch
+
+def test_send_email():
+    """Test email with mocked service"""
+    with patch('email_service.send') as mock_send:
+        mock_send.return_value = {"message_id": "MSG123"}
+
+        agent = MyAgent(api_key="test", customer_id="test")
+        result = agent.send_email("test@example.com", "Test")
+
+        assert result["success"] == True
+```
+
+## Configuration
+
+### Use Environment Variables
+
+```python
+# ✅ Good - use environment variables
+API_KEY = os.getenv('CONVERSIMPLE_API_KEY')
+DATABASE_URL = os.getenv('DATABASE_URL')
+```
+
+### Different Configs Per Environment
+
+```python
+# config.py
+class Config:
+    API_KEY = os.getenv('CONVERSIMPLE_API_KEY')
+    LOG_LEVEL = os.getenv('LOG_LEVEL', 'INFO')
+
+class DevelopmentConfig(Config):
+    DEBUG = True
+    LOG_LEVEL = 'DEBUG'
+
+class ProductionConfig(Config):
+    DEBUG = False
+    LOG_LEVEL = 'WARNING'
+```
+
+## Monitoring
+
+### Track Key Metrics
+
+```python
+class MonitoredAgent(ConversimpleAgent):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.metrics = {
+            "conversations_started": 0,
+            "conversations_ended": 0,
+            "tool_calls": 0,
+            "errors": 0
+        }
+
+    def on_conversation_started(self, conversation_id: str):
+        self.metrics["conversations_started"] += 1
+
+    def on_conversation_ended(self, conversation_id: str):
+        self.metrics["conversations_ended"] += 1
+
+    def on_error(self, error_type: str, message: str, details: dict):
+        self.metrics["errors"] += 1
+```
+
+## Checklist
+
+Before deploying to production:
+
+- [ ] All tools have clear descriptions
+- [ ] Error handling in all tools
+- [ ] Sensitive data not logged
+- [ ] Tests written for tools
+- [ ] Environment variables configured
+- [ ] Logging configured
+- [ ] Health checks implemented
+- [ ] Monitoring set up
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Security" icon="shield" href="/guides/security">
+    Secure your agent
+  </Card>
+  <Card title="Deployment" icon="rocket" href="/guides/deployment">
+    Deploy to production
+  </Card>
+</CardGroup>
