@@ -54,7 +54,7 @@ stateDiagram-v2
 - Tools are registered with the platform
 - Agent enters ready state
 
-**Duration:** 100-500ms
+**Duration:** Less than a second
 
 **Your agent:**
 ```python
@@ -67,8 +67,8 @@ class MyAgent(ConversimpleAgent):
 
 **Platform actions:**
 - Validates authentication
-- Stores tool definitions
-- Allocates resources for conversation
+- Registers your tool definitions
+- Prepares for incoming conversations
 
 ### 2. Connecting
 
@@ -77,7 +77,7 @@ class MyAgent(ConversimpleAgent):
 - Platform creates conversation session
 - Your agent receives `conversation_started` event
 
-**Duration:** 500-2000ms
+**Duration:** 1-2 seconds
 
 **Your agent:**
 ```python
@@ -92,9 +92,9 @@ def on_conversation_started(self, conversation_id: str):
 ```
 
 **Platform actions:**
-- Establishes WebRTC connection
-- Sets up audio processing pipeline
-- Connects to AI services (STT/LLM/TTS or STS)
+- Establishes WebRTC connection with user
+- Sets up audio processing
+- Connects to AI services
 - Notifies your agent
 
 ### 3. Active
@@ -147,7 +147,7 @@ def get_customer(self, customer_id: str) -> dict:
 - May occur multiple times during active phase
 - Audio input may be paused during tool execution
 
-**Duration:** 100-5000ms (depends on tool)
+**Duration:** Varies by tool complexity
 
 **Your agent:**
 ```python
@@ -163,7 +163,7 @@ def on_tool_completed(self, call_id: str, result):
 ```
 
 **Best practices:**
-- Keep tool execution under 3 seconds
+- Keep tool execution fast (under 3 seconds when possible)
 - Use async tools for I/O operations
 - Return partial results for long operations
 - Provide progress updates if possible
@@ -175,7 +175,7 @@ def on_tool_completed(self, call_id: str, result):
 - Platform begins cleanup process
 - Final messages exchanged
 
-**Duration:** 100-500ms
+**Duration:** Less than a second
 
 **Termination triggers:**
 - User hangs up or closes browser
@@ -205,7 +205,7 @@ def on_conversation_ended(self, conversation_id: str):
 
 **Platform cleanup:**
 - Closes WebRTC connection
-- Stops audio processing pipeline
+- Stops audio processing
 - Disconnects AI services
 - Records analytics
 

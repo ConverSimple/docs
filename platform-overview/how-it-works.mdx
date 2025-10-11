@@ -5,7 +5,7 @@ description: "Understand the technical architecture and conversation flow of the
 
 ## System Architecture
 
-Conversimple uses a multi-layered architecture to enable real-time voice conversations:
+Conversimple uses a simple architecture to enable real-time voice conversations:
 
 ```
 ┌─────────────────────────────────────────────────────────┐
@@ -15,33 +15,22 @@ Conversimple uses a multi-layered architecture to enable real-time voice convers
                      │ WebRTC Connection
 ┌────────────────────▼────────────────────────────────────┐
 │              Conversimple Platform                       │
-│  ┌────────────────────────────────────────────────┐    │
-│  │    WebRTC Media Server (Janus Gateway)         │    │
-│  └────────────────────┬───────────────────────────┘    │
-│                       │                                  │
-│  ┌────────────────────▼───────────────────────────┐    │
-│  │    Audio Processing Pipeline (Membrane)        │    │
-│  │    RTP → Opus → PCM (16kHz)                    │    │
-│  └────────────────────┬───────────────────────────┘    │
-│                       │                                  │
-│  ┌────────────────────▼───────────────────────────┐    │
-│  │    Conversation Coordinator                     │    │
-│  │    • Manages conversation lifecycle             │    │
-│  │    • Routes function calls to your agent        │    │
-│  │    • Coordinates AI services (STT/LLM/TTS)     │    │
-│  └────────────────────┬───────────────────────────┘    │
-│                       │                                  │
-└───────────────────────┼──────────────────────────────────┘
-                        │ WebSocket
-┌───────────────────────▼──────────────────────────────────┐
-│                  Your Agent (Python)                      │
-│  ┌──────────────────────────────────────────────────┐   │
-│  │  Tool Definitions (@tool decorator)              │   │
-│  │  • get_weather(location)                         │   │
-│  │  • book_appointment(date, time)                  │   │
-│  │  • lookup_customer(id)                           │   │
-│  └──────────────────────────────────────────────────┘   │
-└──────────────────────────────────────────────────────────┘
+│  • Manages WebRTC connections                           │
+│  • Processes audio streams                              │
+│  • Handles conversation lifecycle                       │
+│  • Routes function calls to your agent                  │
+│  • Coordinates with AI services                         │
+└───────────────────┬─────────────────────────────────────┘
+                    │ WebSocket
+┌───────────────────▼─────────────────────────────────────┐
+│                  Your Agent (Python)                     │
+│  ┌──────────────────────────────────────────────────┐  │
+│  │  Tool Definitions (@tool decorator)              │  │
+│  │  • get_weather(location)                         │  │
+│  │  • book_appointment(date, time)                  │  │
+│  │  • lookup_customer(id)                           │  │
+│  └──────────────────────────────────────────────────┘  │
+└─────────────────────────────────────────────────────────┘
 ```
 
 ## Conversation Flow
@@ -64,16 +53,14 @@ sequenceDiagram
 
 ### 2. Voice Processing
 
-Audio flows through multiple processing stages:
+Audio flows in real-time through the platform:
 
 **Input Path: User Speech → AI Processing**
 ```
 User Microphone
     ↓ WebRTC Audio Stream
-Janus Gateway (Media Relay)
-    ↓ RTP Packets
-Audio Processing Pipeline
-    ↓ Opus Decode → PCM Conversion
+Platform Audio Processing
+    ↓ Processed Audio
 Speech-to-Text Service
     ↓ Transcription
 Large Language Model
@@ -83,10 +70,8 @@ Large Language Model
 **Output Path: AI Response → User Audio**
 ```
 Text-to-Speech Service
-    ↓ PCM Audio Chunks
-Audio Processing Pipeline
-    ↓ Opus Encode → RTP Packets
-Janus Gateway
+    ↓ Generated Audio
+Platform Audio Processing
     ↓ WebRTC Audio Stream
 User Speaker
 ```
@@ -115,72 +100,36 @@ sequenceDiagram
 
 ### Conversimple Platform
 
-**WebRTC Management**
-- Establishes and maintains WebRTC connections
-- Manages media streams and audio routing
-- Handles network issues and reconnections
-
-**Audio Processing**
-- Transcodes RTP to Opus to PCM format
-- Buffers audio for consistent streaming
-- Maintains 16kHz mono audio quality
-
-**Conversation Coordination**
-- Manages conversation state and lifecycle
-- Routes function calls between AI and your agent
-- Handles interruptions and turn-taking
-
-**AI Service Integration**
-- Communicates with STT providers (speech recognition)
-- Sends transcripts to LLM providers (conversation generation)
-- Streams responses to TTS providers (speech synthesis)
+The platform handles all infrastructure concerns:
+- **Connection Management**: Establishes and maintains WebRTC connections with users
+- **Audio Processing**: Handles real-time audio streaming and quality
+- **Conversation Coordination**: Manages conversation state and lifecycle
+- **AI Integration**: Communicates with speech and language AI services
+- **Function Routing**: Routes function calls between AI and your agent
 
 ### Your Agent
 
-**Tool Definition**
-- Define available functions using `@tool` decorator
-- Implement business logic for each tool
-- Return results in expected format
-
-**Event Handling**
-- Respond to conversation lifecycle events
-- Track conversation state
-- Handle errors and edge cases
-
-**Business Logic**
-- Access your databases and services
-- Apply business rules and validation
-- Maintain conversation context
+Your agent focuses on business logic:
+- **Tool Definition**: Define available functions using `@tool` decorator
+- **Event Handling**: Respond to conversation lifecycle events
+- **Business Logic**: Access your databases and services, apply business rules
+- **State Management**: Track conversation context and user data
 
 ## Data Flow
 
 ### Real-Time Audio Pipeline
 
-The platform processes audio in real-time with minimal latency:
+The platform processes audio in real-time with low latency:
 
 ```
-┌──────────┐  20-50ms   ┌──────────┐  50-100ms  ┌──────────┐
-│  WebRTC  │ ────────►  │  Audio   │ ────────►  │   STT    │
-│  Input   │            │ Pipeline │            │ Service  │
-└──────────┘            └──────────┘            └──────────┘
-                                                       │
-                                                 100-200ms
-                                                       │
-┌──────────┐  50-100ms  ┌──────────┐  100-300ms      ▼
-│  WebRTC  │ ◄────────  │  Audio   │ ◄──────── ┌──────────┐
-│  Output  │            │ Pipeline │           │   LLM    │
-└──────────┘            └──────────┘           └──────────┘
-                                                       │
-                                                 200-500ms
-                                                       │
-                                                       ▼
-                                                ┌──────────┐
-                                                │   TTS    │
-                                                │ Service  │
-                                                └──────────┘
+User Speech → Platform Audio Processing → Speech Recognition
+                                              ↓
+User Hears ← Platform Audio Processing ← Text-to-Speech
+                                              ↑
+                                         Language Model
 ```
 
-**Total latency:** 420-1000ms from user speech to AI audio response
+The platform optimizes for natural conversation flow with sub-second response times.
 
 ### Function Call Flow
 
@@ -211,20 +160,11 @@ def get_weather(location: str) -> dict:
 
 ## Scalability & Reliability
 
-### Process Isolation
-- Each conversation runs in an isolated Erlang process
-- Failures in one conversation don't affect others
-- Automatic process restart on failures
-
-### Fault Tolerance
-- Supervision trees ensure conversation continuity
-- Automatic reconnection for network issues
-- Graceful degradation when services are unavailable
-
-### Horizontal Scaling
-- Platform scales across multiple servers
-- WebSocket connections distributed via load balancer
-- Media servers can be added dynamically
+### Built for Scale
+- **Conversation Isolation**: Each conversation runs independently
+- **Fault Tolerance**: Automatic recovery from failures and network issues
+- **Horizontal Scaling**: Platform scales across multiple servers as your traffic grows
+- **High Availability**: Redundant infrastructure ensures reliability
 
 ## Next Steps
 

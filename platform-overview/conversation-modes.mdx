@@ -45,10 +45,7 @@ User Speaker
 
 ### Characteristics
 
-**Latency:** 420-1000ms total
-- STT: 100-200ms
-- LLM: 200-500ms
-- TTS: 120-300ms
+**Latency:** Under 1 second typical response time
 
 **Flexibility:** Very High
 - Separate configuration for each service
@@ -119,9 +116,9 @@ User Speaker
 
 ### Characteristics
 
-**Latency:** 200-600ms total
-- Single unified service handles everything
-- ~50% faster than STT mode
+**Latency:** Ultra-low, typically under 600ms
+- Single unified service for fastest response
+- Approximately 2x faster than STT mode
 - Better interruption handling
 
 **Flexibility:** Moderate
@@ -161,7 +158,7 @@ class FastAgent(ConversimpleAgent):
 
 | Feature | STT Mode | STS Mode |
 |---------|----------|----------|
-| **Latency** | 420-1000ms | 200-600ms |
+| **Latency** | < 1 second | < 600ms (Ultra-low) |
 | **Providers** | Mix & match | Single provider |
 | **Flexibility** | Very High | Moderate |
 | **Setup Complexity** | Higher | Lower |
@@ -213,11 +210,11 @@ Function calling works identically in both modes - the only difference is the pr
 - You require custom LLM configuration or prompt engineering
 - You need to process or transform text between stages
 - You want maximum control over each component
-- Latency under 1 second is acceptable
+- You need flexibility to mix and match AI services
 
 ### Choose STS Mode If:
 
-- Latency is critical (aim for < 600ms response time)
+- Minimal latency is critical for your use case
 - You want the simplest architecture
 - Natural conversation flow is a priority
 - You're comfortable with Gemini Live as your provider
