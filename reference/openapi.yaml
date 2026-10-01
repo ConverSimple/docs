@@ -1,0 +1,345 @@
+openapi: 3.1.0
+info:
+  title: ConverSimple public HTTP contracts
+  version: '2026-10-02'
+  description: >-
+    Current management routes and the deferred Existing Concierge Voice callback.
+    The transcript hook is configured by the customer and described under webhooks.
+servers:
+  - url: https://app.conversimple.com
+    description: Production app
+tags:
+  - name: Agents
+  - name: Deployments
+  - name: API keys
+  - name: Existing concierge voice
+components:
+  securitySchemes:
+    customerKey:
+      type: http
+      scheme: bearer
+      description: Customer API key from Settings → API
+    conciergeSignature:
+      type: apiKey
+      in: header
+      name: X-Conversimple-Signature
+      description: sha256= followed by lowercase HMAC-SHA256 hex of the exact raw JSON bytes
+  parameters:
+    id:
+      name: id
+      in: path
+      required: true
+      schema: {type: string, format: uuid}
+    deploymentId:
+      name: deployment_id
+      in: path
+      required: true
+      schema: {type: string, format: uuid}
+  schemas:
+    Envelope:
+      type: object
+      properties:
+        success: {type: boolean}
+        data: {}
+        meta: {type: object, additionalProperties: true}
+      required: [success, data]
+    PageMeta:
+      type: object
+      properties:
+        page: {type: integer}
+        per_page: {type: integer}
+        total_count: {type: integer}
+        total_pages: {type: integer}
+    Agent:
+      type: object
+      required: [id, name, status]
+      properties:
+        id: {type: string, format: uuid}
+        name: {type: string}
+        status: {type: string}
+        version: {type: integer}
+        agent_spec: {type: object, additionalProperties: true}
+        draft_spec: {type: object, additionalProperties: true}
+        generated_spec: {type: object, additionalProperties: true}
+        test_mode_enabled: {type: boolean}
+        created_at: {type: string, format: date-time}
+        updated_at: {type: string, format: date-time}
+        project_id: {type: [string, 'null']}
+        knowledge_base_id: {type: [string, 'null']}
+    Deployment:
+      type: object
+      required: [id, agent_id, environment, status]
+      properties:
+        id: {type: string, format: uuid}
+        agent_id: {type: string, format: uuid}
+        agent_name: {type: [string, 'null']}
+        environment: {type: string}
+        status: {type: string}
+        call_direction: {type: [string, 'null']}
+        engagement_rules: {type: object, additionalProperties: true}
+        channel_config: {type: object, additionalProperties: true}
+        runtime_config: {type: object, additionalProperties: true}
+        deployed_at: {type: [string, 'null'], format: date-time}
+        created_at: {type: string, format: date-time}
+        updated_at: {type: string, format: date-time}
+    AgentListResponse:
+      type: object
+      required: [success, data, meta]
+      properties:
+        success: {type: boolean}
+        data: {type: array, items: {$ref: '#/components/schemas/Agent'}}
+        meta: {$ref: '#/components/schemas/PageMeta'}
+    DeploymentListResponse:
+      type: object
+      required: [success, data, meta]
+      properties:
+        success: {type: boolean}
+        data: {type: array, items: {$ref: '#/components/schemas/Deployment'}}
+        meta: {$ref: '#/components/schemas/PageMeta'}
+    AgentResponse:
+      type: object
+      required: [success, data]
+      properties:
+        success: {type: boolean}
+        data: {$ref: '#/components/schemas/Agent'}
+    DeploymentResponse:
+      type: object
+      required: [success, data]
+      properties:
+        success: {type: boolean}
+        data: {$ref: '#/components/schemas/Deployment'}
+    AgentCreate:
+      type: object
+      required: [name, description]
+      properties:
+        name: {type: string}
+        description: {type: string}
+    DeploymentCreate:
+      type: object
+      required: [agent_id]
+      properties:
+        agent_id: {type: string, format: uuid}
+        environment: {type: string, description: 'Defaults to widget'}
+        call_direction: {type: string}
+        channel_config: {type: object, additionalProperties: true}
+        engagement_rules: {type: object, additionalProperties: true}
+    ConciergeTurn:
+      type: object
+      required: [conversation_id, turn_id, trace_id, external_user_id, transcript, timestamp]
+      properties:
+        conversation_id: {type: string, format: uuid}
+        turn_id: {type: string, format: uuid}
+        trace_id: {type: string, format: uuid, description: Same value as turn_id}
+        external_user_id: {type: string}
+        transcript: {type: string}
+        timestamp: {type: string, format: date-time}
+    ConciergeReply:
+      type: object
+      required: [conversation_id, turn_id, reply_text]
+      properties:
+        conversation_id: {type: string, format: uuid}
+        turn_id: {type: string, format: uuid}
+        reply_text: {type: string, minLength: 1, description: At most 16000 UTF-8 bytes}
+    ConciergeAccepted:
+      type: object
+      required: [conversation_id, turn_id, status]
+      properties:
+        conversation_id: {type: string, format: uuid}
+        turn_id: {type: string, format: uuid}
+        status: {type: string, const: accepted}
+    ConciergeDisconnected:
+      type: object
+      required: [type, conversation_id, turn_id, trace_id, timestamp]
+      properties:
+        type: {type: string, const: conversation_disconnected}
+        conversation_id: {type: string, format: uuid}
+        turn_id: {type: string, format: uuid}
+        trace_id: {type: string, format: uuid}
+        timestamp: {type: string, format: date-time}
+paths:
+  /api/v1/agents:
+    get:
+      tags: [Agents]
+      summary: List customer agents
+      security: [{customerKey: []}]
+      parameters:
+        - {name: page, in: query, schema: {type: integer, minimum: 1, default: 1}}
+        - {name: per_page, in: query, schema: {type: integer, minimum: 1, maximum: 100, default: 20}}
+        - {name: status, in: query, schema: {type: string}}
+        - {name: search, in: query, schema: {type: string}}
+      responses:
+        '200': {description: Agent list and pagination, content: {application/json: {schema: {$ref: '#/components/schemas/AgentListResponse'}}}}
+    post:
+      tags: [Agents]
+      summary: Start asynchronous agent generation
+      description: >-
+        Returns a job ID. The currently returned /api/v1/jobs/:id/status polling URL
+        has no matching public route; use the dashboard for creation until that gap is fixed.
+      security: [{customerKey: []}]
+      requestBody:
+        required: true
+        content: {application/json: {schema: {$ref: '#/components/schemas/AgentCreate'}}}
+      responses:
+        '202': {description: Generation accepted with job_id, content: {application/json: {schema: {$ref: '#/components/schemas/Envelope'}}}}
+  /api/v1/agents/{id}:
+    parameters: [{$ref: '#/components/parameters/id'}]
+    get:
+      tags: [Agents]
+      summary: Get agent
+      security: [{customerKey: []}]
+      responses:
+        '200': {description: Agent, content: {application/json: {schema: {$ref: '#/components/schemas/AgentResponse'}}}}
+        '404': {description: Agent not found}
+    put:
+      tags: [Agents]
+      summary: Update agent
+      security: [{customerKey: []}]
+      requestBody: {required: true, content: {application/json: {schema: {type: object, additionalProperties: true}}}}
+      responses:
+        '200': {description: Updated agent, content: {application/json: {schema: {$ref: '#/components/schemas/Envelope'}}}}
+    delete:
+      tags: [Agents]
+      summary: Delete agent
+      security: [{customerKey: []}]
+      responses:
+        '200': {description: Deleted agent}
+  /api/v1/agents/{id}/spec:
+    parameters: [{$ref: '#/components/parameters/id'}]
+    get:
+      tags: [Agents]
+      summary: Get agent specification
+      security: [{customerKey: []}]
+      responses:
+        '200': {description: Agent specification, content: {application/json: {schema: {$ref: '#/components/schemas/Envelope'}}}}
+  /api/v1/agents/{id}/generation-status:
+    parameters: [{$ref: '#/components/parameters/id'}]
+    get:
+      tags: [Agents]
+      summary: Get status for an existing agent ID
+      security: [{customerKey: []}]
+      responses:
+        '200': {description: Generation status, content: {application/json: {schema: {$ref: '#/components/schemas/Envelope'}}}}
+  /api/v1/agents/{id}/publish:
+    parameters: [{$ref: '#/components/parameters/id'}]
+    post:
+      tags: [Agents]
+      summary: Publish agent
+      security: [{customerKey: []}]
+      responses:
+        '200': {description: Published agent, content: {application/json: {schema: {$ref: '#/components/schemas/Envelope'}}}}
+  /api/v1/deployments:
+    get:
+      tags: [Deployments]
+      summary: List customer deployments
+      security: [{customerKey: []}]
+      parameters:
+        - {name: page, in: query, schema: {type: integer, minimum: 1, default: 1}}
+        - {name: per_page, in: query, schema: {type: integer, minimum: 1, maximum: 100, default: 20}}
+        - {name: agent_id, in: query, schema: {type: string, format: uuid}}
+        - {name: status, in: query, schema: {type: string}}
+        - {name: environment, in: query, schema: {type: string}}
+      responses:
+        '200': {description: Deployment list and pagination, content: {application/json: {schema: {$ref: '#/components/schemas/DeploymentListResponse'}}}}
+    post:
+      tags: [Deployments]
+      summary: Create deployment
+      security: [{customerKey: []}]
+      requestBody: {required: true, content: {application/json: {schema: {$ref: '#/components/schemas/DeploymentCreate'}}}}
+      responses:
+        '201': {description: Created deployment, content: {application/json: {schema: {$ref: '#/components/schemas/DeploymentResponse'}}}}
+  /api/v1/deployments/{id}:
+    parameters: [{$ref: '#/components/parameters/id'}]
+    get:
+      tags: [Deployments]
+      summary: Get deployment
+      security: [{customerKey: []}]
+      responses:
+        '200': {description: Deployment, content: {application/json: {schema: {$ref: '#/components/schemas/DeploymentResponse'}}}}
+    put:
+      tags: [Deployments]
+      summary: Update deployment
+      security: [{customerKey: []}]
+      requestBody: {required: true, content: {application/json: {schema: {type: object, additionalProperties: true}}}}
+      responses:
+        '200': {description: Updated deployment, content: {application/json: {schema: {$ref: '#/components/schemas/Envelope'}}}}
+    delete:
+      tags: [Deployments]
+      summary: Delete deployment
+      security: [{customerKey: []}]
+      responses:
+        '200': {description: Deleted deployment}
+  /api/v1/deployments/{id}/activate:
+    parameters: [{$ref: '#/components/parameters/id'}]
+    post:
+      tags: [Deployments]
+      summary: Activate deployment
+      security: [{customerKey: []}]
+      responses:
+        '200': {description: Active deployment, content: {application/json: {schema: {$ref: '#/components/schemas/Envelope'}}}}
+  /api/v1/deployments/{id}/deactivate:
+    parameters: [{$ref: '#/components/parameters/id'}]
+    post:
+      tags: [Deployments]
+      summary: Deactivate deployment
+      security: [{customerKey: []}]
+      responses:
+        '200': {description: Inactive deployment, content: {application/json: {schema: {$ref: '#/components/schemas/Envelope'}}}}
+  /api/v1/settings/api-key:
+    get:
+      tags: [API keys]
+      summary: Get masked current key information
+      security: [{customerKey: []}]
+      responses:
+        '200': {description: Masked key information, content: {application/json: {schema: {$ref: '#/components/schemas/Envelope'}}}}
+  /api/v1/settings/api-key/rotate:
+    post:
+      tags: [API keys]
+      summary: Rotate API key and return its new value once
+      security: [{customerKey: []}]
+      responses:
+        '200': {description: New key, content: {application/json: {schema: {$ref: '#/components/schemas/Envelope'}}}}
+  /api/v1/settings/api-key/usage:
+    get:
+      tags: [API keys]
+      summary: Get current key activity
+      security: [{customerKey: []}]
+      responses:
+        '200': {description: Activity, content: {application/json: {schema: {$ref: '#/components/schemas/Envelope'}}}}
+  /embed/concierge/{deployment_id}/replies:
+    parameters: [{$ref: '#/components/parameters/deploymentId'}]
+    post:
+      tags: [Existing concierge voice]
+      summary: Deliver deferred concierge reply
+      description: Sign exact JSON request bytes. Available only for a pending acknowledged turn.
+      security: [{conciergeSignature: []}]
+      requestBody: {required: true, content: {application/json: {schema: {$ref: '#/components/schemas/ConciergeReply'}}}}
+      responses:
+        '200': {description: Accepted or identical duplicate}
+        '401': {description: Invalid body or signature}
+        '409': {description: Stale turn}
+        '410': {description: Conversation ended}
+webhooks:
+  finalTranscript:
+    post:
+      tags: [Existing concierge voice]
+      summary: Final transcript delivered to the customer's configured HTTPS hook
+      description: The hook may answer immediately or acknowledge a deferred reply.
+      security: [{conciergeSignature: []}]
+      requestBody: {required: true, content: {application/json: {schema: {$ref: '#/components/schemas/ConciergeTurn'}}}}
+      responses:
+        '200':
+          description: Matching IDs with immediate text or accepted status
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - {$ref: '#/components/schemas/ConciergeReply'}
+                  - {$ref: '#/components/schemas/ConciergeAccepted'}
+  conversationDisconnected:
+    post:
+      tags: [Existing concierge voice]
+      summary: Best-effort disconnection notice to the customer's configured hook
+      security: [{conciergeSignature: []}]
+      requestBody: {required: true, content: {application/json: {schema: {$ref: '#/components/schemas/ConciergeDisconnected'}}}}
+      responses:
+        '204': {description: Notice processed}

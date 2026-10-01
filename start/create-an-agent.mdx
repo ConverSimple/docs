@@ -1,0 +1,24 @@
+---
+title: "Create your first voice agent"
+description: "Create, test, and publish an agent before deploying it to a website or phone number."
+---
+
+## Prerequisites
+
+- A ConverSimple account at [app.conversimple.com](https://app.conversimple.com).
+- One short job for the agent, such as answering product questions from an approved knowledge source.
+- Permission to use the microphone in your browser for Quick Test.
+
+## Create and test
+
+1. Open **Agents** and create an agent. For a first agent, choose **Free-flow** and **Standard Pipeline**. [Compare modes](/guides/agent-modes).
+2. Give it a concise purpose, instructions, and a greeting. Tell it what to do when information is missing.
+3. If answers must come from business documents, attach a knowledge base and assign a retrieval tool. If it must act in another system, configure an HTTP or integration tool with a meaningful input schema. [Knowledge and tools](/guides/knowledge-and-tools).
+4. In **Quick Test**, ask a question the agent can answer and one it should decline. If a tool is involved, verify the tool result and spoken answer in the conversation timeline.
+5. Publish the agent, then create a deployment for the intended channel.
+
+Test Mode can substitute configured tool responses. Turn it off when validating a real integration: a successful simulated result does not prove that an external service received a request.
+
+## Next step
+
+Use [Embed an agent](/guides/embed-agent) for a website or [Connect a Twilio number](/guides/twilio-phone) for phone calls. Browser Quick Test and a deployed widget share voice infrastructure but have separate client surfaces; test the actual deployment before launch.

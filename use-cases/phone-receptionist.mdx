@@ -1,0 +1,28 @@
+---
+title: "Set up an after-hours phone receptionist"
+description: "Answer a Twilio number, collect caller intent, and create a ticket or callback request."
+---
+
+Start with a bounded phone job: answer a common question, collect the reason for calling, and create a ticket or callback request when a person is needed. This does not require pretending that a live transfer already works.
+
+## Prerequisites
+
+- A Twilio account and a number connected in ConverSimple.
+- A published agent and a phone deployment bound to that number.
+- An approved knowledge source or a tested ticket/callback HTTP tool.
+
+## Configure and verify
+
+1. [Connect the Twilio number](/guides/twilio-phone) and bind the intended agent.
+2. Give the agent a short greeting and hours/policy information. Ask for only the caller details needed for a follow-up.
+3. Connect a tool that records the request. Require the tool to return a ticket or callback ID before the agent confirms it was submitted.
+4. Place a real inbound call. Verify both directions of speech, the final transcript, the tool result, and the created record.
+5. Test a missed answer, caller interruption, and the tool failing. Have the agent offer an honest fallback.
+
+For example, an after-hours caller reports a billing question. The agent says when the team will be available, asks for a safe callback contact, then calls a configured `create_ticket` tool. A result such as `{"ticket_id":"T-1042","status":"open"}` lets it confirm the request; a timeout must lead to a different spoken response. The ticket tool and callback process belong to your business system.
+
+## Limits
+
+Basic Twilio spoken conversation has been verified. Tool use on a physical Twilio call and physical inbound routing still need workflow-specific checks. Flow handoff currently changes agent state and can speak a handoff message; it is **not a confirmed human phone bridge**. Do not advertise live transfer or emergency response on this basis. [Current capabilities](/reference/capabilities).
+
+If calls do not reach the agent, check the number binding and webhook configured in [Twilio setup](/guides/twilio-phone), then compare the provider call status with the ConverSimple conversation timeline.

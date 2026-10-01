@@ -1,43 +1,39 @@
-# Mintlify Starter Kit
+# ConverSimple documentation
 
-Use the starter kit to get your docs deployed and ready to customize.
+Source for [docs.conversimple.com](https://docs.conversimple.com), built with Mintlify. The documentation is organized by the job a customer is trying to do: add voice to an existing SaaS concierge, embed an agent, connect a phone line, or run Python tools.
 
-Click the green **Use this template** button at the top of this repo to copy the Mintlify starter kit. The starter kit contains examples with
+The current site content was rewritten against the platform and SDK sources reviewed on 2 October 2026. This branch is a draft; content only reaches the public site when merged into the branch connected to Mintlify.
 
-- Guide pages
-- Navigation
-- Customizations
-- API reference pages
-- Use of popular components
+## Preview and checks
 
-**[Follow the full quickstart guide](https://starter.mintlify.com/quickstart)**
+From this directory:
 
-## Development
-
-Install the [Mintlify CLI](https://www.npmjs.com/package/mint) to preview your documentation changes locally. To install, use the following command:
-
-```
-npm i -g mint
-```
-
-Run the following command at the root of your documentation, where your `docs.json` is located:
-
-```
+```bash
 mint dev
+mint validate
+mint broken-links
+mint openapi-check reference/openapi.yaml
 ```
 
-View your local preview at `http://localhost:3000`.
+The Existing Concierge Voice example is in `examples/concierge-saas`:
 
-## Publishing changes
+```bash
+cd examples/concierge-saas
+npm install
+npm test
+```
 
-Install our GitHub app from your [dashboard](https://dashboard.mintlify.com/settings/organization/github-app) to propagate changes from your repo to your deployment. Changes are deployed to production automatically after pushing to the default branch.
+Mintlify provides `/llms.txt`, `/llms-full.txt`, and plain Markdown versions of pages automatically. Do not maintain separate prose for agents; make the public page precise enough for both humans and agents.
 
-## Need help?
+## Sources and writing rules
 
-### Troubleshooting
+- The current platform routes, controller contracts, deployment UI, widget client, and provider configuration live in `ProjectTathastu/conversimple`.
+- The published Python package source lives in `ProjectTathastu/conversimple-sdk`; check the installed distribution version separately from an in-source `__version__` constant.
+- Keep internal architecture notes and test reports in the platform repo. Public docs describe supported customer actions and their limits.
+- State who owns each action: ConverSimple, the customer's browser, or the customer's backend. Distinguish speech generation from observed browser playback and physical audibility.
+- Every quickstart needs prerequisites, a bounded job, exact setup steps, a success check, failure behavior, and links to its reference contract.
+- Do not claim a provider, model, language, latency, live transfer, or campaign capability from a UI label alone. Verify source and an end-to-end scenario for the exact surface.
+- Update the OpenAPI file and affected guides when a public route, response, SDK method, or browser event changes. Review examples against real signatures and keep secrets out of sample output.
+- Use stable page paths and add redirects when replacing a page. Run the local checks before publishing.
 
-- If your dev environment isn't running: Run `mint update` to ensure you have the most recent version of the CLI.
-- If a page loads as a 404: Make sure you are running in a folder with a valid `docs.json`.
-
-### Resources
-- [Mintlify documentation](https://mintlify.com/docs)
+The historical 2025 SDK pages remain in the repository for provenance but are outside the current navigation and redirected where they have a current equivalent. Do not use them as the source for new customer claims.

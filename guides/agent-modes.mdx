@@ -1,0 +1,18 @@
+---
+title: "Choose an agent mode"
+description: "Understand free-flow standard pipeline, free-flow speech-to-speech, and flow-based Alpha."
+---
+
+The agent builder presents three customer-facing choices. Choose based on how much control the workflow needs; provider names are configuration choices, not agent modes.
+
+| Builder choice | Good starting job | How it runs | Status |
+| --- | --- | --- | --- |
+| **Free-flow — Standard Pipeline** | Support answers with knowledge and HTTP tools | Speech recognition → text model and tools → speech generation | Supported |
+| **Free-flow — Speech-to-Speech** | Natural low-latency conversation when native provider behavior fits | Native real-time speech model | Supported |
+| **Flow-based** | A constrained sequence with branches and slots | Generated/editable graph and flow runtime | Alpha |
+
+Start with the standard pipeline when the agent must inspect structured tool outputs, apply detailed business instructions, or cite knowledge. Try speech-to-speech when natural turn-taking is the priority and the chosen provider supports the required behavior. Use flow-based Alpha for a workflow you can test node by node, including error branches. Do not assume an automated graph handoff connects a human to a phone call.
+
+**Existing Concierge Voice** is not one of these agent modes. It keeps your answer engine and only supplies browser speech input/output. [Integration guide](/use-cases/existing-saas-concierge).
+
+The server also retains legacy/internal coordinators. They are not extra builder choices. Supported STT, TTS, model, voice, and language options depend on provider configuration and account access; confirm the actual combinations in the builder and test the chosen language end to end.

@@ -1,101 +1,109 @@
 {
   "$schema": "https://mintlify.com/docs.json",
   "theme": "mint",
-  "name": "Conversimple SDK",
+  "name": "ConverSimple",
   "colors": {
     "primary": "#16A34A",
     "light": "#07C983",
     "dark": "#15803D"
   },
   "favicon": "/favicon.svg",
+  "logo": {
+    "light": "/logo/light.svg",
+    "dark": "/logo/dark.svg"
+  },
   "navigation": {
     "tabs": [
       {
-        "tab": "Guides",
+        "tab": "Start here",
         "groups": [
           {
-            "group": "Platform Overview",
-            "pages": [
-              "platform-overview/introduction",
-              "platform-overview/how-it-works",
-              "platform-overview/conversation-modes",
-              "platform-overview/use-cases"
-            ]
-          },
-          {
-            "group": "Getting Started",
+            "group": "Overview",
             "pages": [
               "index",
-              "quickstart"
+              "start/choose-a-path",
+              "reference/capabilities"
             ]
           },
           {
-            "group": "Core Concepts",
+            "group": "First conversation",
             "pages": [
-              "core-concepts/agent",
-              "core-concepts/tools",
-              "core-concepts/events",
-              "core-concepts/authentication",
-              "core-concepts/conversation-lifecycle",
-              "core-concepts/error-handling",
-              "core-concepts/logging-monitoring"
-            ]
-          },
-          {
-            "group": "Advanced Guides",
-            "pages": [
-              "guides/multi-conversation-management",
-              "guides/state-management",
-              "guides/testing-your-agent",
-              "guides/deployment",
-              "guides/scaling",
-              "guides/debugging",
-              "guides/best-practices",
-              "guides/security"
-            ]
-          },
-          {
-            "group": "Integration Patterns",
-            "pages": [
-              "integrations/databases",
-              "integrations/external-apis",
-              "integrations/crm-systems",
-              "integrations/notification-services"
-            ]
-          },
-          {
-            "group": "Examples",
-            "pages": [
-              "examples/simple-agent",
-              "examples/customer-service-agent",
-              "examples/booking-agent"
-            ]
-          },
-          {
-            "group": "Troubleshooting",
-            "pages": [
-              "troubleshooting/connection-issues",
-              "troubleshooting/tool-execution-errors",
-              "troubleshooting/performance-issues",
-              "troubleshooting/faq"
+              "start/create-an-agent",
+              "guides/agent-modes"
             ]
           }
         ]
       },
       {
-        "tab": "API Reference",
+        "tab": "Use cases",
         "groups": [
           {
-            "group": "SDK",
+            "group": "Browser voice",
             "pages": [
-              "api-reference/conversimple-agent",
-              "api-reference/tool-decorators",
-              "api-reference/event-callbacks",
-              "api-reference/configuration",
-              "api-reference/websocket-protocol",
-              "api-reference/error-codes",
-              "api-reference/type-reference"
+            "use-cases/existing-saas-concierge",
+            "use-cases/concierge-sample",
+              "use-cases/website-support",
+              "use-cases/lead-capture",
+              "use-cases/appointment-booking"
             ]
+          },
+          {
+            "group": "Phone voice",
+            "pages": [
+              "use-cases/phone-receptionist",
+              "use-cases/outbound-follow-up"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "Build",
+        "groups": [
+          {
+            "group": "Deploy",
+            "pages": [
+              "guides/embed-agent",
+              "guides/twilio-phone",
+              "guides/python-sdk-tools"
+            ]
+          },
+          {
+            "group": "Configure",
+            "pages": [
+              "guides/knowledge-and-tools",
+              "guides/testing-and-release"
+            ]
+          },
+          {
+            "group": "Troubleshoot",
+            "pages": [
+              "troubleshooting/browser-voice",
+              "troubleshooting/concierge-replies"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "Reference",
+        "groups": [
+          {
+            "group": "Existing concierge voice",
+            "pages": [
+              "reference/concierge-contract",
+              "reference/browser-events"
+            ]
+          },
+          {
+            "group": "Platform and SDK",
+            "pages": [
+              "reference/platform-api",
+              "reference/python-sdk",
+              "reference/limits-and-status"
+            ]
+          },
+          {
+            "group": "HTTP endpoints",
+            "openapi": "reference/openapi.yaml"
           }
         ]
       }
@@ -106,18 +114,9 @@
           "anchor": "Documentation",
           "href": "https://docs.conversimple.com",
           "icon": "book-open-cover"
-        },
-        {
-          "anchor": "Blog",
-          "href": "https://conversimple.com/blog",
-          "icon": "newspaper"
         }
       ]
     }
-  },
-  "logo": {
-    "light": "/logo/light.svg",
-    "dark": "/logo/dark.svg"
   },
   "navbar": {
     "links": [
@@ -134,7 +133,165 @@
   },
   "footer": {
     "socials": {
-      "github": "https://github.com/conversimple/conversimple-sdk"
+      "github": "https://github.com/ConverSimple/conversimple-sdk"
     }
-  }
+  },
+  "redirects": [
+    {
+      "source": "/quickstart",
+      "destination": "/guides/python-sdk-tools"
+    },
+    {
+      "source": "/platform-overview/conversation-modes",
+      "destination": "/guides/agent-modes"
+    },
+    {
+      "source": "/platform-overview/introduction",
+      "destination": "/"
+    },
+    {
+      "source": "/api-reference/conversimple-agent",
+      "destination": "/reference/python-sdk"
+    },
+    {
+      "source": "/platform-overview/how-it-works",
+      "destination": "/start/choose-a-path"
+    },
+    {
+      "source": "/platform-overview/use-cases",
+      "destination": "/"
+    },
+    {
+      "source": "/core-concepts/agent",
+      "destination": "/guides/agent-modes"
+    },
+    {
+      "source": "/core-concepts/tools",
+      "destination": "/guides/knowledge-and-tools"
+    },
+    {
+      "source": "/core-concepts/events",
+      "destination": "/reference/browser-events"
+    },
+    {
+      "source": "/core-concepts/authentication",
+      "destination": "/reference/platform-api"
+    },
+    {
+      "source": "/core-concepts/conversation-lifecycle",
+      "destination": "/guides/testing-and-release"
+    },
+    {
+      "source": "/core-concepts/error-handling",
+      "destination": "/troubleshooting/concierge-replies"
+    },
+    {
+      "source": "/core-concepts/logging-monitoring",
+      "destination": "/guides/testing-and-release"
+    },
+    {
+      "source": "/guides/multi-conversation-management",
+      "destination": "/reference/python-sdk"
+    },
+    {
+      "source": "/guides/state-management",
+      "destination": "/reference/python-sdk"
+    },
+    {
+      "source": "/guides/testing-your-agent",
+      "destination": "/guides/testing-and-release"
+    },
+    {
+      "source": "/guides/deployment",
+      "destination": "/guides/python-sdk-tools"
+    },
+    {
+      "source": "/guides/scaling",
+      "destination": "/reference/capabilities"
+    },
+    {
+      "source": "/guides/debugging",
+      "destination": "/troubleshooting/browser-voice"
+    },
+    {
+      "source": "/guides/best-practices",
+      "destination": "/guides/testing-and-release"
+    },
+    {
+      "source": "/guides/security",
+      "destination": "/reference/concierge-contract"
+    },
+    {
+      "source": "/integrations/databases",
+      "destination": "/guides/knowledge-and-tools"
+    },
+    {
+      "source": "/integrations/external-apis",
+      "destination": "/guides/knowledge-and-tools"
+    },
+    {
+      "source": "/integrations/crm-systems",
+      "destination": "/guides/knowledge-and-tools"
+    },
+    {
+      "source": "/integrations/notification-services",
+      "destination": "/guides/knowledge-and-tools"
+    },
+    {
+      "source": "/examples/simple-agent",
+      "destination": "/guides/python-sdk-tools"
+    },
+    {
+      "source": "/examples/customer-service-agent",
+      "destination": "/use-cases/website-support"
+    },
+    {
+      "source": "/examples/booking-agent",
+      "destination": "/use-cases/appointment-booking"
+    },
+    {
+      "source": "/troubleshooting/connection-issues",
+      "destination": "/troubleshooting/browser-voice"
+    },
+    {
+      "source": "/troubleshooting/tool-execution-errors",
+      "destination": "/guides/knowledge-and-tools"
+    },
+    {
+      "source": "/troubleshooting/performance-issues",
+      "destination": "/troubleshooting/browser-voice"
+    },
+    {
+      "source": "/troubleshooting/faq",
+      "destination": "/start/choose-a-path"
+    },
+    {
+      "source": "/api-reference/tool-decorators",
+      "destination": "/reference/python-sdk"
+    },
+    {
+      "source": "/api-reference/event-callbacks",
+      "destination": "/reference/python-sdk"
+    },
+    {
+      "source": "/api-reference/configuration",
+      "destination": "/reference/python-sdk"
+    },
+    {
+      "source": "/api-reference/websocket-protocol",
+      "destination": "/reference/python-sdk"
+    },
+    {
+      "source": "/api-reference/error-codes",
+      "destination": "/reference/python-sdk"
+    },
+    {
+      "source": "/api-reference/type-reference",
+      "destination": "/reference/python-sdk"
+    },
+    {
+      "source": "/development",
+      "destination": "/guides/python-sdk-tools"
+    }
+  ]
 }

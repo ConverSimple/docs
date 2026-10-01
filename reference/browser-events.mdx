@@ -1,0 +1,26 @@
+---
+title: "Browser voice events"
+description: "Interpret transcript, reply, playback, interruption, and error events in Existing Concierge Voice."
+---
+
+Pass `onEvent` to `ConversimpleVoice.create(...)`. Each callback receives an object with a `type` field. These are the events an application should use for its text UI and voice status.
+
+| Event | Meaning | UI action |
+| --- | --- | --- |
+| `connecting` | Starting identity, signaling, and media setup | Show connecting |
+| `ready`, `connected` | Media client has reached its respective ready/connected stage | Show listening when connected |
+| `reconnecting` | A temporary audio connection interruption is being evaluated | Show reconnecting, not listening |
+| `final_transcript` | The user's final utterance; includes `text` and `turn_id` | Add user text once, keyed by turn |
+| `waiting_for_reply` | Hook accepted a deferred reply | Show a working cue |
+| `reply_text` | ConverSimple received text to speak; includes the turn ID | Add concierge text, but do not mark audio as played |
+| `playback_started` | Browser audio playback path started for the turn | Show speaking |
+| `playback_finished` | WebSocket audio queue drained after an idle interval | Clear speaking state |
+| `playback_interrupted` | Speech was cut off by another turn | Mark the reply interrupted |
+| `disconnected` | Session ended | Reset controls |
+| `error`, `hook_error`, `tts_error`, `playback_error` | Setup, hook, speech generation, or browser playback failed | Show an actionable error |
+
+`reply_text` alone does **not** mean audio began. `playback_started` observes the browser's audio path, not physical speaker output. `playback_finished` is a WebSocket queue observation, not proof of audibility; WebRTC fallback can lack per-turn start and finish events. If the user cannot hear a reply, inspect the event sequence and [browser voice troubleshooting](/troubleshooting/browser-voice).
+
+The `turn_id` on events is the `trace_id` in the conversation timeline and the hook payload. Use it to join client logs to a hook request without logging the user's identity token or shared secret.
+
+Browser capture requests echo cancellation and noise suppression. Barge-in metadata reports whether a confirmed partial or final transcript triggered interruption; it cannot establish whether speaker-to-microphone feedback caused it. The agent editor exposes barge-in settings for workflows that favor uninterrupted playback.

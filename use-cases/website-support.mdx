@@ -1,0 +1,28 @@
+---
+title: "Answer website support questions"
+description: "Give visitors spoken answers from approved knowledge and connect specific actions to tools."
+---
+
+Use an embedded ConverSimple agent when you want to add a voice support entry point to a website without building your own answer engine.
+
+## Prerequisites
+
+- A published agent and active widget deployment.
+- Reviewed support content in a knowledge base, and an assigned retrieval tool if the agent needs it.
+- A support fallback, such as a ticket or callback path, for requests the agent cannot resolve.
+
+## Build the first workflow
+
+1. Create a free-flow standard-pipeline agent. Give it a narrow scope: for example, answer shipping-policy questions using the attached support knowledge base.
+2. In its instructions, require it to say when the source does not contain an answer. Do not ask it to invent order status or policy.
+3. Attach the knowledge base and retrieval tool. For account-specific answers, use a customer HTTP tool that looks up the account after your own verification step. [Knowledge and tools](/guides/knowledge-and-tools).
+4. Test one answerable and one unanswerable question in Quick Test. Inspect the transcript and tool event in the timeline.
+5. Create a widget deployment and add the generated snippet to a staging page. Test microphone permission and audible playback there. [Embed guide](/guides/embed-agent).
+
+## Measure the outcome
+
+Track how many visitors received a correct answer and how many requested further help. A completed conversation is not the same as a resolved support issue. Review failed searches and transcripts before broadening the scope.
+
+## Limits and troubleshooting
+
+The platform can create a HubSpot ticket through a configured integration tool, but a flow **handoff** node does not itself connect a visitor or caller to a human. Design a real callback or ticket route if that is the promised fallback. Test real tools with Test Mode off; simulated results are only a rehearsal. See [Browser voice troubleshooting](/troubleshooting/browser-voice).

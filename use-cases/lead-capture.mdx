@@ -1,0 +1,32 @@
+---
+title: "Capture and qualify website leads"
+description: "Use a voice widget to ask qualifying questions and record a lead in your CRM."
+---
+
+A voice widget can greet visitors, ask a small set of qualifying questions, and send the result to your CRM. The website embed and HubSpot/Salesforce contact tools exist; a complete lead process still needs your qualification rules and a verified destination.
+
+## Prerequisites
+
+- A published agent and active widget deployment.
+- A connected CRM integration or HTTPS lead API with a tested create/update operation.
+- A clear notice to visitors about what details will be collected and how they will be used.
+
+## Build the workflow
+
+1. Define no more than the facts a sales team needs to act, such as company, role, need, and preferred follow-up channel.
+2. Give the agent short instructions for collecting, confirming, and summarizing those facts. Do not promise a meeting or follow-up that your backend has not accepted.
+3. Assign a CRM or HTTP tool with named, required inputs and an output that contains a stable lead ID. [Tools guide](/guides/knowledge-and-tools).
+4. Test a complete lead, a refusal to share details, and an interrupted conversation. With Test Mode off, verify exactly one real CRM record was created.
+5. Embed the widget on a staging page. Consider an engagement delay and respect for visitor preferences; the offer should never bypass the browser's microphone permission. [Embed guide](/guides/embed-agent).
+
+For example, the agent might ask for a work email and what problem the visitor wants to solve, then call your configured `create_lead` HTTP tool. A useful success result is `{"lead_id":"crm_123","status":"created"}`. Only then should it say that the inquiry was submitted. This is an example customer tool contract, not a built-in CRM field mapping.
+
+## Measure the outcome
+
+Count accepted and deduplicated CRM records, not merely started conversations. Use your CRM's lead ID to reconcile the agent's confirmation with the write. Follow-up scheduling and campaign automation are customer-specific integrations, not automatic consequences of capturing a lead.
+
+## Limits
+
+ConverSimple offers tool execution and widget engagement settings; it does not supply a universal lead-scoring policy or guarantee a CRM field mapping. Validate the configured CRM scopes and error path before publishing this as an unattended workflow.
+
+If the embed cannot connect or the visitor cannot hear speech, use [Browser voice troubleshooting](/troubleshooting/browser-voice).

@@ -1,0 +1,42 @@
+---
+title: "Book an appointment by voice"
+description: "Connect a voice agent to your availability and booking API, with explicit confirmation."
+---
+
+Booking is a **customer integration**, not a built-in ConverSimple calendar connector. The agent can gather preferences and call HTTPS tools; your booking system must remain the authority for availability and reservations.
+
+## Prerequisites
+
+- A published agent deployed to a website or Twilio number.
+- An HTTPS API for availability lookup and booking creation or change.
+- A safe way to identify the customer, if the booking belongs to an account.
+
+## Implement
+
+1. Add a read-only availability tool with explicit inputs such as service, location, date, and time zone. Return slot IDs, not just display strings.
+2. Add a booking tool that takes a selected slot ID and an idempotency key. Your backend checks availability again, atomically reserves it, and returns a booking ID or a clear conflict.
+3. Instruct the agent to repeat the proposed time and ask for confirmation **before** calling the booking tool. Speak success only after the backend returns a booking ID.
+4. Test unavailable slots, changed user preference, duplicate tool calls, interrupted speech, and booking API failure. Check the final booking in the customer's system of record.
+
+An example customer API separates lookup from commitment:
+
+```text
+availability({service: "consultation", date: "2026-10-15", time_zone: "Asia/Kolkata"})
+  → {slots: [{id: "slot_42", starts_at: "2026-10-15T14:00:00+05:30"}]}
+book({slot_id: "slot_42", idempotency_key: "TURN_UUID"})
+  → {booking_id: "booking_819", status: "confirmed"}
+```
+
+These are example tool inputs and results for **your** API, not ConverSimple endpoints. The receiving backend must decide how long a slot is held and what a duplicate request returns.
+
+For a visual workflow, flow-based agents are currently **Alpha**. A narrow free-flow agent with well-described HTTP tools is the simpler starting point. [Agent modes](/guides/agent-modes).
+
+## Measure the outcome
+
+Use booking IDs and successful changes/cancellations as outcome evidence. Conversation completion or a spoken confirmation alone does not prove a reservation exists.
+
+## Limits
+
+ConverSimple does not provide a native calendar, scheduling-policy engine, or transactional guarantee for your API. For phone booking, verify the real Twilio call and tool result together before relying on it for customers.
+
+For missing or failed tool results, review [Knowledge and tools](/guides/knowledge-and-tools). For browser audio trouble, see [Browser voice troubleshooting](/troubleshooting/browser-voice).

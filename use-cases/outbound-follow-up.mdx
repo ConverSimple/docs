@@ -1,0 +1,16 @@
+---
+title: "Outbound follow-up: current scope"
+description: "Understand what basic outbound calling covers and what a campaign requires."
+---
+
+ConverSimple has completed a basic Twilio outbound spoken call, but that does not establish an unattended reminder, sales, or campaign product.
+
+## A bounded pilot
+
+For a single approved recipient, configure a Twilio phone deployment, choose the intended agent, place one call, and inspect the conversation timeline. Confirm that your business workflow knows the call outcome, not just that Twilio accepted the dial request. [Twilio setup](/guides/twilio-phone).
+
+## Before a broader rollout
+
+A production follow-up system needs recipient eligibility and consent records, suppression and opt-out handling, scheduling and time zones, retry policy, per-customer spending and concurrency limits, and outcome reconciliation. These are business-system responsibilities unless explicitly implemented and verified for your deployment.
+
+Do not treat widget auto-call as PSTN outbound calling. Widget auto-call offers a voice session to a visitor already on the website; it still depends on browser interaction and microphone permission. [Embed guide](/guides/embed-agent).

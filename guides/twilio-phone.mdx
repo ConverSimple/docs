@@ -1,0 +1,23 @@
+---
+title: "Connect a Twilio phone number"
+description: "Bind a phone number to a published agent and verify a real spoken call."
+---
+
+## Prerequisites
+
+- A Twilio account and phone number you can configure.
+- A published ConverSimple agent.
+- Access to **Integrations → Telephony** and **Deployments** in the ConverSimple dashboard.
+
+## Set up
+
+1. Open [Telephony integration](https://app.conversimple.com/integrations/telephony) and connect your Twilio account and number. Follow the webhook details displayed there for that number; do not copy an old test tunnel URL from another environment.
+2. Create a **phone** deployment and select the number in the channel configuration. Activate the deployment.
+3. Place a real inbound call. Speak a short, distinctive phrase and verify the agent's spoken response.
+4. Open the conversation record and timeline. Confirm its direction, transcript, outcome, and any expected tool result. A provider status of “completed” alone does not prove the agent heard and answered.
+
+For an outbound pilot, use the platform's outbound page only with an approved test recipient, then verify the same spoken and stored evidence. The existence of a dial button does not imply campaign scheduling or suppression controls. [Outbound scope](/use-cases/outbound-follow-up).
+
+## Limits
+
+Twilio trial accounts may play their own introductory message and restrict destination numbers. ConverSimple's phone audio path differs from browser WebRTC; browser widget tests do not replace a phone test. Human live transfer is not established by the flow handoff node. [Capabilities](/reference/capabilities).

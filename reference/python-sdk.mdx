@@ -1,0 +1,32 @@
+---
+title: "Python SDK reference"
+description: "Package identity, dispatcher, agent class, and platform API client."
+---
+
+Two PyPI distributions, `conversimple-sdk` and `conversimple`, currently publish version 0.2.4. Use `conversimple-sdk` in these examples; both import as `conversimple`. Pin the distribution version in production. The Python SDK is distinct from `https://app.conversimple.com/assets/concierge_voice.js`.
+
+## Agent tool runtime
+
+The package exports `ConversimpleAgent`, `tool`, `tool_async`, and `ConversimpleDispatcher`. A `ConversimpleAgent` is one instance per conversation. Its constructor accepts an API key and optional customer ID, platform URL, and reconnect controls. The current dispatcher entry point is `conversimple-dispatcher`; it accepts `--api-key`, `--platform-url`, and `--search-path`. The production control WebSocket is `wss://app.conversimple.com/customer_sdk/websocket`.
+
+For a runnable starter, use the **SDK Package** button in the deployment wizard. The generated bundle binds the tool class to the platform agent ID and includes a dispatcher. [Run it](/guides/python-sdk-tools).
+
+## Management API client
+
+`PlatformClient` offers Python methods for agents, deployments, and API keys:
+
+```python
+from conversimple import PlatformClient
+
+client = PlatformClient(
+    api_key="YOUR_API_KEY",
+    api_endpoint="https://app.conversimple.com"
+)
+agents, page = client.agents.list_agents(page=1, per_page=20)
+for agent in agents:
+    print(agent.id, agent.name)
+```
+
+Set `CONVERSIMPLE_API_ENDPOINT` to the app origin if you use SDK defaults. The package's historical default API hostname may not match the currently deployed app. [Platform REST API](/reference/platform-api).
+
+Do not use the old `quickstart` example that starts one manually managed agent instance and sleeps forever as the default deployment pattern. The dispatcher is the maintained per-conversation path.

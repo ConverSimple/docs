@@ -1,0 +1,86 @@
+---
+title: "Existing concierge voice contract"
+description: "Identity token, signed transcript hook, immediate reply, deferred callback, and disconnection behavior."
+---
+
+Base URL: `https://app.conversimple.com`. This contract applies to an **active widget deployment** configured for Existing Concierge Voice. Your configured hook and SaaS origin must use HTTPS. The shared secret is server-side only.
+
+## Identity token
+
+Your backend issues an HS256 JWT to its signed-in user. The browser's `getIdentityToken` callback fetches it immediately before `voice.start()`.
+
+| Claim | Required value |
+| --- | --- |
+| `iss` | The widget deployment ID |
+| `aud` | `conversimple-voice` |
+| `sub` | A stable, nonempty user ID, at most 256 bytes |
+| `iat` | Unix seconds when issued |
+| `exp` | Unix seconds in the future, no more than five minutes after `iat` |
+
+The start request is bound to the configured SaaS origin and token. The shared secret must never be sent to the browser. Mint a fresh token for each start; an old token or wrong origin fails before a voice session is allocated.
+
+## Reply hook
+
+For each **final** utterance, ConverSimple sends a JSON `POST` to your configured HTTPS hook. The body contains:
+
+```json
+{
+  "conversation_id": "CONVERSATION_UUID",
+  "turn_id": "TURN_UUID",
+  "trace_id": "TURN_UUID",
+  "external_user_id": "YOUR_USER_ID",
+  "transcript": "Where is my order?",
+  "timestamp": "2026-10-02T12:00:00Z"
+}
+```
+
+`trace_id` equals `turn_id` and correlates related timeline events. ConverSimple signs the exact raw request body with HMAC-SHA256 using the deployment secret. The header is `X-Conversimple-Signature: sha256=<lowercase hexadecimal digest>`. Verify before processing, using a constant-time comparison. Do not reserialize JSON for verification.
+
+Your hook must return HTTP 2xx with matching IDs. For an immediate answer:
+
+```json
+{"conversation_id":"CONVERSATION_UUID","turn_id":"TURN_UUID","reply_text":"Your answer."}
+```
+
+The text must be nonempty and at most 16,000 UTF-8 bytes. ConverSimple trims surrounding whitespace. The hook request has a 15-second receive timeout; aim to respond much sooner so the caller is not left waiting.
+
+## Deferred reply
+
+For work that takes longer, acknowledge promptly:
+
+```json
+{"conversation_id":"CONVERSATION_UUID","turn_id":"TURN_UUID","status":"accepted"}
+```
+
+Queue work keyed by `turn_id`. When ready, send a JSON `POST` to:
+
+```text
+https://app.conversimple.com/embed/concierge/YOUR_DEPLOYMENT_ID/replies
+```
+
+Sign the **exact UTF-8 callback body** with the same HMAC header. Its fields are `conversation_id`, `turn_id`, and `reply_text`. The callback accepts a pending turn for up to two minutes. An identical repeat returns `{"status":"duplicate"}`; a first accepted reply returns `{"status":"accepted"}`. A superseded turn returns HTTP 409 `stale_turn`; an ended conversation returns HTTP 410 `conversation_ended`. Do not retry 409 or 410 as if they were transient server failures. Invalid signatures or malformed callback bodies return HTTP 401 `invalid_reply`.
+
+If the browser disconnects during a pending turn, ConverSimple makes a best-effort signed POST to the same hook:
+
+```json
+{"type":"conversation_disconnected","conversation_id":"...","turn_id":"...","trace_id":"...","timestamp":"..."}
+```
+
+Cancel work when possible. Because this event is best effort, the 410 callback response remains the final safeguard. The hook and callback are server-to-server; no polling or persistent connection to your backend is needed.
+
+## Minimal signing example
+
+```js
+import {createHmac, timingSafeEqual} from "node:crypto";
+
+const sign = (rawBody, secret) =>
+  "sha256=" + createHmac("sha256", secret).update(rawBody).digest("hex");
+
+function validSignature(rawBody, header, secret) {
+  const expected = Buffer.from(sign(rawBody, secret));
+  const received = Buffer.from(header || "");
+  return received.length === expected.length && timingSafeEqual(received, expected);
+}
+```
+
+For a runnable 25-second example and browser integration, see [Run the deferred concierge sample](/use-cases/concierge-sample). The sample uses a fixed demo identity; replace its authentication route before using it with real customers.

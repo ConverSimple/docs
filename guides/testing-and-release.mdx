@@ -1,0 +1,19 @@
+---
+title: "Verify a voice workflow before launch"
+description: "Test the customer-visible outcome on the exact surface you intend to deploy."
+---
+
+Use a small, repeatable scenario with a distinctive utterance and an expected answer. Verify the complete path, not just a connected socket or a provider response.
+
+| Surface | Minimum check |
+| --- | --- |
+| Quick Test | Final transcript, intended agent response, and any expected tool result |
+| Script widget | Real host page, permission, microphone input, browser playback, and repeat-visit behavior |
+| Iframe widget | Same checks, plus iframe permissions and the host interaction bridge when required |
+| Existing Concierge Voice | Signed-in token, final transcript, signed hook, reply text, playback event, and audible response; test immediate and deferred replies if used |
+| Twilio | Physical call, both spoken directions, final transcript, number binding, and external tool result if relevant |
+| Python SDK tools | Dispatcher registration, one conversation with a real tool result, reconnect and duplicate-result behavior |
+
+For an external write, check the destination system. A `reply_text` event does not establish that audio played, and a completed conversation does not establish that a booking or lead was saved. Keep a failed-path test: missing knowledge, backend timeout, interrupted turn, and customer hang-up.
+
+Use conversation and turn IDs to correlate browser events, hook requests, and timeline events. Do not log identity tokens, API keys, or deployment shared secrets. [Browser events](/reference/browser-events).

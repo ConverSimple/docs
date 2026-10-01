@@ -1,0 +1,24 @@
+---
+title: "Capabilities and maturity"
+description: "What ConverSimple currently offers, and which business workflows require more integration work."
+---
+
+This is a product capability map, not a claim that every customer configuration has passed end-to-end testing. Updated 2 October 2026.
+
+| Capability | State | Boundary to understand |
+| --- | --- | --- |
+| Free-flow standard-pipeline browser agent | Supported | STT, model, TTS, knowledge, and tools depend on configured providers and accounts. |
+| Free-flow native speech-to-speech browser agent | Supported | Model and voice availability depend on provider configuration. |
+| Flow-based agent | Alpha | Generated graph and editor work; complex branches and tool-failure paths need workflow-specific validation. |
+| Quick Test, script widget, iframe widget | Supported | Check actual host origin, microphone permission, and audio playback on the customer site. |
+| Existing Concierge Voice browser SDK | Supported | Customer backend owns answer generation and user identity. Full text replies, not token streaming. |
+| Deferred concierge reply | Supported | Acknowledge promptly, then send one signed answer within two minutes. |
+| Tool Library HTTP, knowledge retrieval, Slack action | Supported | Configure and test each real endpoint; Test Mode simulations do not execute it. |
+| Python SDK tool listener | Supported | Customer hosts a dispatcher; package and alias 0.2.4 were published. |
+| Basic Twilio voice conversation | Supported | Verify your own number, webhook, and tool behavior before launch. |
+| Live human phone transfer | Not established | A flow handoff message does not bridge a human onto the call. |
+| Outbound calling at campaign scale | Not established | Basic outbound speech was tested; scheduling, consent/suppression, and campaign controls are separate work. |
+| Calendar booking | Customer integration | Use a customer HTTP tool; there is no built-in booking connector or booking guarantee. |
+| Agent-assist whispering, meeting bot, real-time translation | Not offered here | These need additional product architecture and validation. |
+
+When choosing a path, start from the business outcome and test the full journey. [Testing and release](/guides/testing-and-release) explains the minimum evidence for a customer deployment.

@@ -1,0 +1,22 @@
+---
+title: "Existing concierge reply troubleshooting"
+description: "Trace a missing, delayed, stale, or silent reply by turn ID."
+---
+
+## No hook request arrives
+
+Confirm the widget deployment is active and configured for **Existing Concierge Voice**, the SaaS origin matches exactly, and `voice.start()` received a fresh identity token. Only a **final transcript** invokes the hook. Check whether `final_transcript` appeared in the browser before investigating your backend.
+
+## Hook arrives but speech is delayed
+
+The synchronous hook can take up to 15 seconds, but waiting that long makes the caller wait in silence. For a 20–30-second backend task, return `status: "accepted"` promptly, show a working cue on `waiting_for_reply`, then send the signed callback within two minutes. [Deferred contract](/reference/concierge-contract#deferred-reply).
+
+## Callback is rejected
+
+Verify the raw body HMAC, deployment ID, matching `conversation_id` and `turn_id`, nonempty text, and that the turn remains pending. HTTP 409 means stale/superseded; HTTP 410 means the conversation ended. Neither should be retried as a transient error. Identical accepted callbacks return `status: "duplicate"`.
+
+## Reply text appears but the user hears nothing
+
+Compare `reply_text`, `playback_started`, `playback_finished`, and error events for the same `turn_id`. A missing start signal can mean playback has not begun or that WebRTC fallback lacks a per-turn signal. Inspect the browser's audio permission and output device. [Browser voice troubleshooting](/troubleshooting/browser-voice).
+
+Use the `turn_id` as the hook request ID and timeline `trace_id`. Do not put transcript or credentials into diagnostic URLs.

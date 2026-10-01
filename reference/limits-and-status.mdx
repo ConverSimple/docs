@@ -1,0 +1,19 @@
+---
+title: "Limits, statuses, and evidence"
+description: "Known protocol limits and what a successful event does—and does not—prove."
+---
+
+| Item | Current behavior |
+| --- | --- |
+| Existing concierge identity JWT | HS256; `exp` at most five minutes after `iat`; deployment ID and audience bound |
+| Concierge hook request | 15-second receive timeout; one final transcript per turn |
+| Deferred concierge reply | One complete text answer within two minutes of acknowledgement |
+| Concierge transcript | At most 16,000 UTF-8 bytes in a hook request |
+| Concierge reply | Nonempty, at most 16,000 UTF-8 bytes |
+| Browser playback events | WebSocket start/drain observations; WebRTC fallback may lack per-turn signals |
+| Flow-based agent | Alpha; test each node, tool error, and branch for the intended workflow |
+| Human phone transfer | A flow handoff message is not an established live bridge |
+
+Do not infer a universal STT, model, TTS, or language limit from this page. Those depend on the selected provider, account, and deployment configuration. The dashboard exposes provider options for the account; verify the chosen combination and its costs before launch.
+
+For capability maturity see [Capabilities](/reference/capabilities). For exact concierge fields and status codes see [Existing concierge contract](/reference/concierge-contract).

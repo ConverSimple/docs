@@ -1,0 +1,62 @@
+---
+title: "Add voice to an existing SaaS concierge"
+description: "Keep your signed-in app, chat UI, and reply engine; let ConverSimple handle speech."
+---
+
+Use **Existing Concierge Voice** when your application already knows the user and already produces text answers. ConverSimple captures microphone audio, sends each **final** user utterance to your HTTPS hook, and speaks the reply text. Your browser UI also receives the transcript and reply text. ConverSimple does not run an LLM or select tools on this path.
+
+## Prerequisites
+
+- A signed-in browser app with an existing chat UI and backend.
+- An active **widget** deployment in [ConverSimple](https://app.conversimple.com/deployments).
+- One public HTTPS reply-hook URL and your SaaS page's exact HTTPS origin.
+- A server-side place to store the per-deployment shared secret. Never put it in browser code.
+
+## Integrate
+
+1. Open the deployment detail page. Under **Existing Concierge Voice**, enter the hook URL and SaaS origin, save, and copy the newly displayed secret. It is shown once.
+2. On your backend, add a signed-in endpoint that mints a short-lived HS256 identity token. Use the deployment ID as `iss`, `conversimple-voice` as `aud`, your stable user ID as `sub`, and `iat`/`exp` no more than five minutes apart. [Identity contract](/reference/concierge-contract#identity-token).
+3. Add `https://app.conversimple.com/assets/concierge_voice.js` to the SaaS page and connect it to your existing microphone and stop buttons:
+
+```html
+<script src="https://app.conversimple.com/assets/concierge_voice.js"></script>
+<script>
+  const voice = ConversimpleVoice.create({
+    deploymentId: "YOUR_DEPLOYMENT_ID",
+    getIdentityToken: async () => {
+      const response = await fetch("/api/voice-token", {credentials: "same-origin"});
+      if (!response.ok) throw new Error("Sign in to use voice");
+      return (await response.json()).token;
+    },
+    onEvent: event => {
+      if (event.type === "final_transcript") addUserMessage(event.text);
+      if (event.type === "waiting_for_reply") showWorkingCue();
+      if (event.type === "reply_text") addConciergeMessage(event.text);
+      if (event.type === "playback_started") markVoicePlaying();
+      if (event.type === "playback_finished") clearVoicePlaying();
+      if (event.type === "error" || event.type === "hook_error" ||
+          event.type === "tts_error" || event.type === "playback_error") showVoiceError(event);
+    }
+  });
+  document.querySelector("#microphone").addEventListener("click", () => voice.start());
+  document.querySelector("#stop-voice").addEventListener("click", () => voice.stop());
+</script>
+```
+
+4. At your hook, verify `X-Conversimple-Signature` against the **raw request bytes**. Use `turn_id` as an idempotency key. For a fast answer, return the same `conversation_id` and `turn_id` with `reply_text` in HTTP 200. [Reply contract](/reference/concierge-contract#reply-hook).
+5. If your answer takes longer, return `status: "accepted"` promptly, then POST one signed reply to the callback URL within two minutes. [Deferred reply](/reference/concierge-contract#deferred-reply).
+
+## What success looks like
+
+The chat UI receives `final_transcript`, then `reply_text`. For WebSocket playback, `playback_started` and `playback_finished` describe the browser audio path; they cannot prove the listener heard sound. Test speech on your actual host origin with a real microphone and speaker. [Browser events](/reference/browser-events).
+
+## Limits and troubleshooting
+
+- The hook has a 15-second server timeout; acknowledge long-running work well before then. A deferred answer has a two-minute window.
+- Replies are complete text. Token-by-token reply streaming is not supported.
+- A browser disconnection sends a best-effort signed event for a pending turn; a late callback receives HTTP 410 if the conversation has ended.
+- Microphone permission, autoplay, ICE, and output-device behavior still matter. [Browser voice troubleshooting](/troubleshooting/browser-voice) and [reply troubleshooting](/troubleshooting/concierge-replies).
+
+This SDK is for an existing concierge. To let a ConverSimple agent answer directly, [embed an agent widget](/guides/embed-agent).
+
+For a complete delayed-reply fixture, [run the SaaS sample](/use-cases/concierge-sample).

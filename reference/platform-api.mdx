@@ -1,0 +1,24 @@
+---
+title: "Platform REST API"
+description: "Authenticated agent and deployment management endpoints on the current app origin."
+---
+
+Base URL: `https://app.conversimple.com`. `/api/v1` management routes require `Authorization: Bearer YOUR_API_KEY` and are scoped to the authenticated customer. Get and rotate your key in [Settings → API](https://app.conversimple.com/settings/api). Store it server-side.
+
+```bash
+curl --fail-with-body \
+  --header "Authorization: Bearer $CONVERSIMPLE_API_KEY" \
+  'https://app.conversimple.com/api/v1/agents?page=1&per_page=20'
+```
+
+| Resource | Routes |
+| --- | --- |
+| Agents | `GET/POST /api/v1/agents`; `GET/PUT/DELETE /api/v1/agents/:id`; `GET /api/v1/agents/:id/spec`; `GET /api/v1/agents/:id/generation-status`; `POST /api/v1/agents/:id/publish` |
+| Deployments | `GET/POST /api/v1/deployments`; `GET/PUT/DELETE /api/v1/deployments/:id`; `POST /api/v1/deployments/:id/activate`; `POST /api/v1/deployments/:id/deactivate` |
+| API key | `GET /api/v1/settings/api-key`; `POST /api/v1/settings/api-key/rotate`; `GET /api/v1/settings/api-key/usage` |
+
+The API key value is shown when issued or rotated, not on every settings visit. Plan rotation so services using the old key can switch promptly. Use the [Python `PlatformClient`](/reference/python-sdk) if you prefer typed methods.
+
+The public widget and concierge session endpoints are **not** a substitute for the management API key. Existing Concierge Voice uses a deployment-bound user JWT to start the browser session and HMAC signatures for the server-to-server hook and deferred callback. [Contract](/reference/concierge-contract).
+
+The [interactive endpoint reference](/api-reference/agents/list-customer-agents) is generated from the machine-readable `reference/openapi.yaml` in this docs repository. It deliberately uses the current app origin; the older platform-source OpenAPI file still contains historical hostnames. `POST /api/v1/agents` currently returns a polling URL with no matching public route, so use the dashboard to create agents until that API gap is repaired.

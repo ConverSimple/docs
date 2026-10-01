@@ -1,48 +1,27 @@
 ---
-title: "Introduction"
-description: "Python client library for the Conversimple Conversational AI Platform."
+title: "ConverSimple documentation"
+description: "Build voice agents, embed them on websites, connect phone calls, or add speech to your existing concierge."
 ---
 
-## Welcome to the Conversimple SDK
+ConverSimple provides the browser and phone audio path for conversational applications. Build an agent in the dashboard, connect your tools and knowledge, or keep your existing concierge and use ConverSimple for speech input and output.
 
-The Conversimple SDK is a Python client library that enables you to build and deploy AI agents that integrate with the Conversimple platform's WebRTC infrastructure and conversation management, providing real-time voice conversation capabilities with function calling support.
+## What do you want to build?
 
-<CardGroup cols={2}>
-  <Card
-    title="Quickstart"
-    icon="rocket"
-    href="/quickstart"
-  >
-    Get your first agent up and running in minutes.
-  </Card>
-  <Card
-    title="Core Concepts"
-    icon="brain"
-    href="/core-concepts/agent"
-  >
-    Learn about the fundamental concepts of the SDK.
-  </Card>
-  <Card
-    title="API Reference"
-    icon="code"
-    href="/api-reference/conversimple-agent"
-  >
-    Explore the full API of the SDK.
-  </Card>
-  <Card
-    title="Examples"
-    icon="stars"
-    href="/examples/simple-agent"
-  >
-    See the SDK in action with our example agents.
-  </Card>
-</CardGroup>
+| Goal | Start here | Who supplies the answer? |
+| --- | --- | --- |
+| Add speech to a signed-in SaaS concierge and its existing chat UI | [Existing SaaS concierge](/use-cases/existing-saas-concierge) | Your HTTPS reply hook |
+| Answer questions on a website | [Website support](/use-cases/website-support) | A ConverSimple agent with instructions, knowledge, and tools |
+| Capture and qualify website leads | [Lead capture](/use-cases/lead-capture) | A ConverSimple agent and your CRM or HTTP tool |
+| Handle an after-hours phone line | [Phone receptionist](/use-cases/phone-receptionist) | A ConverSimple agent over Twilio |
+| Run your own Python tool handlers | [Python SDK tools](/guides/python-sdk-tools) | Your Python service returns tool results to the agent |
 
-## Features
+New to the platform? [Create your first agent](/start/create-an-agent), then [choose a deployment path](/start/choose-a-path).
 
-- **Real-time Voice Conversations**: Integrate with WebRTC-based voice conversations
-- **Function Calling**: Define tools that can be executed during conversations
-- **Event-Driven Architecture**: React to conversation lifecycle events
-- **Auto-Reconnection**: Fault-tolerant WebSocket connection with exponential backoff
-- **Type Hints**: Full typing support for better development experience
-- **Async/Await Support**: Both sync and async tool definitions
+## Where to look next
+
+- [Capabilities and maturity](/reference/capabilities) distinguishes supported paths from alpha and unimplemented workflows.
+- [Agent modes](/guides/agent-modes) explains standard pipeline, speech-to-speech, and flow-based agents.
+- [Existing concierge contract](/reference/concierge-contract) gives exact fields, signatures, and response behavior.
+- [Platform API](/reference/platform-api) covers programmatic agent and deployment management.
+
+Documentation reflects the platform reviewed on 2 October 2026. Provider availability and account entitlements can vary; the dashboard shows choices available to your account.

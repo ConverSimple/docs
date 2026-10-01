@@ -1,0 +1,22 @@
+---
+title: "Browser voice troubleshooting"
+description: "Diagnose microphone, WebRTC, browser playback, and silent replies."
+---
+
+## The call never reaches listening
+
+Check that the website is HTTPS, the browser granted microphone permission for the **actual host origin**, and the user started the call from an interaction. The script widget, iframe, Quick Test, and Existing Concierge Voice have different client pages; permission on one origin or Chrome profile does not imply permission on another.
+
+If the page says connecting or audio timed out, inspect the conversation timeline and browser console for signaling or ICE failure. TURN may be needed on a restrictive mobile network, but an ICE error does not by itself identify TURN as the cause. Retry on a stable network and capture the conversation ID.
+
+## The agent produced text but there is no sound
+
+Check the browser's site mute state, selected output device, volume, autoplay state, and whether the page has had a user interaction. AirPods or another Bluetooth output can become the active sink unexpectedly. In Existing Concierge Voice, `reply_text` means text arrived; `playback_started` means the browser audio path began. Neither proves the speaker emitted sound. [Event meanings](/reference/browser-events).
+
+## Speech starts and is cut off
+
+Look for `playback_interrupted`, a new transcript, and barge-in metadata in the timeline. Speaker-to-microphone feedback is possible; it is not proved merely because a transcript resembles the agent's first word. Try headphones or adjust barge-in settings in the agent editor, then retest.
+
+## Information to capture for support
+
+Send the deployment ID, conversation ID, approximate time and time zone, integration type (Quick Test, script, iframe, concierge), browser/output device, and the last observed event. Do not send an API key, identity token, hook signature, or deployment secret.

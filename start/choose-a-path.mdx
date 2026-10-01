@@ -1,0 +1,17 @@
+---
+title: "Choose a voice integration"
+description: "Select the smallest ConverSimple integration that fits your application and business job."
+---
+
+Choose who owns the conversation before choosing an audio transport.
+
+| Your situation | Integration | What you build |
+| --- | --- | --- |
+| You already have a signed-in browser app, chat UI, and reply engine | [Existing Concierge Voice](/use-cases/existing-saas-concierge) | A token endpoint and signed HTTPS reply hook |
+| You want ConverSimple to answer visitors on a website | [Script or iframe widget](/guides/embed-agent) | An agent, deployment, and embed snippet |
+| You want a phone line answered by an agent | [Twilio phone deployment](/guides/twilio-phone) | A connected Twilio number and agent binding |
+| You want custom Python tool execution | [Python SDK dispatcher](/guides/python-sdk-tools) | A long-running dispatcher and tool handlers |
+
+The ordinary website widget runs a ConverSimple agent. **Existing Concierge Voice** is different: it captures and transcribes speech, sends final utterances to your backend, and speaks the text your backend returns. It does not run a ConverSimple LLM or choose tools. The Python SDK is different again: it hosts customer-defined tools for a ConverSimple agent; it is not the browser voice SDK.
+
+If your workflow requires a live person to take over a phone call, review [current limits](/reference/limits-and-status) before designing the experience. A flow handoff message is not a completed phone transfer.

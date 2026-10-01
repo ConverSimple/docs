@@ -1,0 +1,27 @@
+---
+title: "Run the deferred concierge sample"
+description: "A small SaaS page, signed hook, and 25-second delayed reply for local qualification."
+---
+
+The documentation repository contains `examples/concierge-saas`: an Express server, a browser page with a microphone button and message list, and local contract tests. The server signs a two-minute identity JWT, verifies the raw hook signature, acknowledges a final transcript, then sends a signed answer 25 seconds later.
+
+## Run it
+
+1. Configure an active widget deployment for **Existing Concierge Voice**. Set its hook to `https://YOUR_TEST_ORIGIN/conversimple/reply` and its allowed origin to exactly `https://YOUR_TEST_ORIGIN`. Copy the shared secret once.
+2. From the repository's `examples/concierge-saas` directory, install dependencies and run the checks:
+
+```bash
+npm install
+npm test
+CONVERSIMPLE_DEPLOYMENT_ID='YOUR_DEPLOYMENT_ID' \
+CONVERSIMPLE_VOICE_SECRET='YOUR_SHARED_SECRET' \
+npm start
+```
+
+3. Serve this app behind HTTPS at the configured origin. Open `https://YOUR_TEST_ORIGIN/?deployment_id=YOUR_DEPLOYMENT_ID`, click **Start voice**, and speak. Inspect `final_transcript`, `waiting_for_reply`, `reply_text`, and browser playback events alongside the conversation timeline.
+
+The local `npm test` uses a fake callback server. It verifies the token, request HMAC, acknowledgement, and signed deferred callback without creating a real ConverSimple voice session. A real browser session on your test origin is the separate end-to-end check.
+
+## Before using this pattern for customers
+
+The sample `/api/voice-token` returns a token for a fixed demo user and has **no application sign-in check**. Replace it with your own authenticated endpoint. Replace the in-memory timer with durable work keyed by `turn_id`, return your concierge's actual text, and cancel when `conversation_disconnected` arrives. Never put the shared secret in browser code. [Full contract](/reference/concierge-contract).

@@ -1,0 +1,32 @@
+---
+title: "Extend an agent with Python SDK tools"
+description: "Run a dispatcher that registers Python handlers for agent-selected tools."
+---
+
+The Python SDK hosts customer-defined tool implementations. ConverSimple still manages the voice session; your dispatcher registers handlers and returns results when the agent selects them. It is separate from the browser `ConversimpleVoice` SDK for an existing SaaS concierge.
+
+## Prerequisites
+
+- Python 3.8 or newer and `conversimple-sdk` 0.2.4.
+- A ConverSimple API key from [Settings → API](https://app.conversimple.com/settings/api).
+- An agent and a deployment configured to use your SDK tool.
+- A machine on which the dispatcher can stay running.
+
+## Run a dispatcher
+
+```bash
+python -m pip install 'conversimple-sdk==0.2.4'
+export CONVERSIMPLE_API_KEY='YOUR_API_KEY'
+conversimple-dispatcher \
+  --api-key "$CONVERSIMPLE_API_KEY" \
+  --platform-url 'wss://app.conversimple.com/customer_sdk/websocket' \
+  --search-path ./agents
+```
+
+Use the agent package downloadable from the deployment wizard as the starting point for `./agents`. It includes a dispatcher and an agent module associated with that deployment. Replace generated simulated handlers with real business logic before production. Keep the API key in your process secret store, not the source file.
+
+The dispatcher discovers modules under `--search-path`, registers them, and starts a separate `ConversimpleAgent` instance for each conversation. A tool definition uses the SDK's `@tool` decorator; see the installed package and generated bundle for the exact handler signature. [Python SDK reference](/reference/python-sdk).
+
+## Verify
+
+Run one conversation in which the agent chooses the tool. Confirm registration, the handler input, its real external result, and the agent's next spoken turn. Test an unavailable backend and a repeated tool invocation. A dispatcher that has merely connected does not prove tool execution. [Testing checklist](/guides/testing-and-release).

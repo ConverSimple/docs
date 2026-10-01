@@ -1,0 +1,35 @@
+---
+title: "Embed a voice agent on a website"
+description: "Use the script or iframe snippet from an active widget deployment."
+---
+
+This path lets a ConverSimple agent answer visitors. If your SaaS already has a concierge and chat UI, use [Existing Concierge Voice](/use-cases/existing-saas-concierge) instead.
+
+## Prerequisites
+
+- A [published agent](/start/create-an-agent).
+- A **widget** deployment whose status is active.
+- A website where you can add the embed code and test microphone permission.
+
+## Add the widget
+
+1. Open [Deployments](https://app.conversimple.com/deployments), create a widget deployment for your agent, and activate it.
+2. On its detail page, copy the **Script Embed** or **Iframe Embed** code. Copying from the page preserves the actual deployment ID and current engagement options.
+3. Paste it into a staging page, load that page over HTTPS, start a call through a user gesture, and confirm that the visitor can speak and hear a reply.
+
+A minimal script embed looks like this; use the generated snippet for a real deployment:
+
+```html
+<script src="https://app.conversimple.com/js/widget.js"
+        data-deployment-id="YOUR_DEPLOYMENT_ID"></script>
+```
+
+The iframe uses `/embed/widget/YOUR_DEPLOYMENT_ID` and must allow `microphone; autoplay`. When **require user interaction** is enabled, use the iframe's generated companion `widget_iframe_bridge.js` script too; older iframe snippets without it cannot pass the host-page click to the iframe.
+
+## Engagement settings
+
+The deployment can offer an incoming website call after an auto-call delay, require a prior page interaction, play an offer sound, and respect a visitor's decline preferences. A call offer is not microphone access: the visitor still accepts the offer and the browser still enforces permission. For iframe hosts, `?auto_call_delay=30` overrides the delay; for script embeds, use `data-auto-call-delay="30"`. `0` disables auto-call for that host. Configure retry preferences in the deployment rather than implementing repeated offers in your host page.
+
+## Limits and troubleshooting
+
+An iframe and script embed have distinct browser clients. Test the one you actually ship, including a first user interaction, a decline, and a repeat visit. If the UI connects but audio is silent, follow [Browser voice troubleshooting](/troubleshooting/browser-voice). A website widget is not a Twilio phone call or the customer-owned concierge SDK.

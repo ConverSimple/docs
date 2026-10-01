@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Existing Concierge Voice demo</title></head>
+<body>
+  <h1>Existing Concierge Voice demo</h1>
+  <p>This sample uses a demo user. Replace the token route with your app's authentication before use with real customers.</p>
+  <button id="microphone">Start voice</button><button id="stop-voice">Stop voice</button>
+  <p id="status" aria-live="polite">Idle</p><ol id="messages"></ol>
+  <script src="https://app.conversimple.com/assets/concierge_voice.js"></script>
+  <script>
+    const deploymentId = new URLSearchParams(location.search).get("deployment_id");
+    if (!deploymentId) document.querySelector("#status").textContent = "Add ?deployment_id=YOUR_DEPLOYMENT_ID";
+    const addMessage = (speaker, text) => {
+      const item = document.createElement("li");
+      item.textContent = `${speaker}: ${text}`;
+      document.querySelector("#messages").append(item);
+    };
+    const voice = deploymentId && ConversimpleVoice.create({
+      deploymentId,
+      getIdentityToken: async () => {
+        const response = await fetch("/api/voice-token", {credentials: "same-origin"});
+        if (!response.ok) throw new Error("Could not obtain identity token");
+        return (await response.json()).token;
+      },
+      onEvent: event => {
+        if (event.type === "final_transcript") addMessage("You", event.text);
+        if (event.type === "reply_text") addMessage("Concierge", event.text);
+        if (["connecting", "connected", "waiting_for_reply", "playback_started", "playback_finished", "disconnected"].includes(event.type))
+          document.querySelector("#status").textContent = `${event.type}${event.turn_id ? ` (${event.turn_id})` : ""}`;
+        if (["error", "hook_error", "tts_error", "playback_error"].includes(event.type))
+          document.querySelector("#status").textContent = `${event.type}: ${event.message || "Check timeline"}`;
+      }
+    });
+    document.querySelector("#microphone").addEventListener("click", () => voice?.start());
+    document.querySelector("#stop-voice").addEventListener("click", () => voice?.stop());
+  </script>
+</body>
+</html>

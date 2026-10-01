@@ -1,0 +1,18 @@
+---
+title: "Ground answers and connect actions"
+description: "Use a knowledge base for approved facts and a tool for data or actions outside the conversation."
+---
+
+## Knowledge bases
+
+Create a knowledge base in the dashboard, add reviewed source material, and wait for ingestion to complete. Assign its retrieval tool to the agent. Ask one question whose answer exists and one whose answer does not; verify the retrieval event and reply in the timeline. An attached knowledge base without a usable retrieval path is not proof that an agent will cite it.
+
+## HTTP and integration tools
+
+Use **Tool Library** to configure an HTTPS operation, import operations from an OpenAPI description, or select an available integration template such as HubSpot, Salesforce, or Slack. Give every tool a precise purpose and input schema; missing or vague required inputs make model selection unreliable. Return concise structured results that tell the agent whether the action actually succeeded.
+
+For changes in an external system, make the receiving API idempotent. The agent should confirm a booking, ticket, lead, or message only after the tool returns a stable ID or explicit success. Include a clear failure response so it can recover without inventing an outcome.
+
+## Test the real path
+
+**Test Mode** can return saved simulated function responses. It is useful for rehearsing dialogue, but does not prove that an HTTP request, Slack action, or CRM write happened. Turn Test Mode off, use a safe test destination, and inspect both the ConverSimple timeline and the external system. [Testing and release](/guides/testing-and-release).
