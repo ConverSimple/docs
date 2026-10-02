@@ -37,7 +37,7 @@ The iframe needs its companion bridge to apply dashboard position changes and pa
 
 ## Engagement settings
 
-The deployment can offer an incoming website call after an auto-call delay, require a prior page interaction, play an offer sound, and respect a visitor's decline preferences. Set these options, position, and page-context controls in the deployment editor. The delay starts when the widget loads; if **Require user interaction first** is enabled, it starts after the first click, key press, or tap. Interaction does not skip the delay. The offer itself is local to the browser; a voice session starts only when the visitor accepts and grants microphone access. Set the delay to `0` or leave it empty to disable auto-call. Legacy `data-*` behavior attributes and the iframe `?auto_call_delay=` parameter are ignored. Older iframe embeds without the bridge still load, but cannot receive dashboard position changes or host-page interaction.
+The deployment can offer an incoming website call after an auto-call delay, require a prior page interaction, play an offer sound, and respect a visitor's decline preferences. Set these options, position, and page-context controls in the deployment editor. The delay starts when the widget loads; if **Require user interaction first** is enabled, it starts after the first click, key press, or tap. Interaction does not skip the delay. The offer itself is local to the browser; a voice session starts only when the visitor accepts and grants microphone access. Set the delay to `0` or leave it empty to disable auto-call. The embed accepts only the deployment ID; the iframe also requires its companion bridge.
 
 ## Limit widget usage
 
