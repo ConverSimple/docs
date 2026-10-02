@@ -14,7 +14,7 @@ This path lets a ConverSimple agent answer visitors. If your SaaS already has a 
 ## Add the widget
 
 1. Open [Deployments](https://app.conversimple.com/deployments), create a widget deployment for your agent, and activate it.
-2. On its detail page, copy the **Script Embed** or **Iframe Embed** code. Copying from the page preserves the actual deployment ID and current engagement options.
+2. On its detail page, copy the **Script Embed** or **Iframe Embed** code. The snippet identifies the deployment; change behavior later in the deployment editor without redeploying your website.
 3. Paste it into a staging page, load that page over HTTPS, start a call through a user gesture, and confirm that the visitor can speak and hear a reply.
 
 A minimal script embed looks like this; use the generated snippet for a real deployment:
@@ -24,11 +24,20 @@ A minimal script embed looks like this; use the generated snippet for a real dep
         data-deployment-id="YOUR_DEPLOYMENT_ID"></script>
 ```
 
-The iframe uses `/embed/widget/YOUR_DEPLOYMENT_ID` and must allow `microphone; autoplay`. When **require user interaction** is enabled, use the iframe's generated companion `widget_iframe_bridge.js` script too; older iframe snippets without it cannot pass the host-page click to the iframe.
+The iframe needs its companion bridge to apply dashboard position changes and pass host-page interaction to the iframe:
+
+```html
+<iframe id="conversimple-widget-YOUR_DEPLOYMENT_ID"
+        src="https://app.conversimple.com/embed/widget/YOUR_DEPLOYMENT_ID"
+        allow="microphone; autoplay"
+        title="Voice assistant"></iframe>
+<script src="https://app.conversimple.com/js/widget_iframe_bridge.js"
+        data-deployment-id="YOUR_DEPLOYMENT_ID"></script>
+```
 
 ## Engagement settings
 
-The deployment can offer an incoming website call after an auto-call delay, require a prior page interaction, play an offer sound, and respect a visitor's decline preferences. The delay starts when the widget loads; if **Require user interaction first** is enabled, it starts after the first click, key press, or tap. Interaction does not skip the delay. The offer itself is local to the browser; a voice session starts only when the visitor accepts and grants microphone access. For iframe hosts, `?auto_call_delay=30` overrides the delay; for script embeds, use `data-auto-call-delay="30"`. `0` disables auto-call for that host. Configure retry preferences in the deployment rather than implementing repeated offers in your host page.
+The deployment can offer an incoming website call after an auto-call delay, require a prior page interaction, play an offer sound, and respect a visitor's decline preferences. Set these options, position, and page-context controls in the deployment editor. The delay starts when the widget loads; if **Require user interaction first** is enabled, it starts after the first click, key press, or tap. Interaction does not skip the delay. The offer itself is local to the browser; a voice session starts only when the visitor accepts and grants microphone access. Set the delay to `0` or leave it empty to disable auto-call. Legacy `data-*` behavior attributes and the iframe `?auto_call_delay=` parameter are ignored. Older iframe embeds without the bridge still load, but cannot receive dashboard position changes or host-page interaction.
 
 ## Limit widget usage
 
