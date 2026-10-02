@@ -28,7 +28,11 @@ The iframe uses `/embed/widget/YOUR_DEPLOYMENT_ID` and must allow `microphone; a
 
 ## Engagement settings
 
-The deployment can offer an incoming website call after an auto-call delay, require a prior page interaction, play an offer sound, and respect a visitor's decline preferences. A call offer is not microphone access: the visitor still accepts the offer and the browser still enforces permission. For iframe hosts, `?auto_call_delay=30` overrides the delay; for script embeds, use `data-auto-call-delay="30"`. `0` disables auto-call for that host. Configure retry preferences in the deployment rather than implementing repeated offers in your host page.
+The deployment can offer an incoming website call after an auto-call delay, require a prior page interaction, play an offer sound, and respect a visitor's decline preferences. The delay starts when the widget loads; if **Require user interaction first** is enabled, it starts after the first click, key press, or tap. Interaction does not skip the delay. The offer itself is local to the browser; a voice session starts only when the visitor accepts and grants microphone access. For iframe hosts, `?auto_call_delay=30` overrides the delay; for script embeds, use `data-auto-call-delay="30"`. `0` disables auto-call for that host. Configure retry preferences in the deployment rather than implementing repeated offers in your host page.
+
+## Limit widget usage
+
+In the deployment editor, enable **Widget limits** to set a daily admission budget, estimated reservation per conversation, maximum session duration, concurrent conversation count, daily conversation minutes per visitor IP, and allowed HTTPS website origins. These settings apply to both script and iframe widgets. The daily budget is a conservative admission estimate, not an exact cap on the model provider's invoice. The platform checks these limits when a visitor accepts and starts a session, so ringing and declined offers do not reserve usage. Use the actual HTTPS origins of each site that embeds the widget; a denied origin cannot start a conversation.
 
 ## Limits and troubleshooting
 
