@@ -24,7 +24,7 @@ A minimal script embed looks like this; use the generated snippet for a real dep
         data-deployment-id="YOUR_DEPLOYMENT_ID"></script>
 ```
 
-The iframe needs its companion bridge to apply dashboard position changes and pass host-page interaction to the iframe:
+The iframe needs its companion bridge to apply dashboard position changes:
 
 ```html
 <iframe id="conversimple-widget-YOUR_DEPLOYMENT_ID"
@@ -37,11 +37,11 @@ The iframe needs its companion bridge to apply dashboard position changes and pa
 
 ## Engagement settings
 
-The deployment can offer an incoming website call after an auto-call delay, require a prior page interaction, play an offer sound, and respect a visitor's decline preferences. Set these options, position, and page-context controls in the deployment editor. The delay starts when the widget loads; if **Require user interaction first** is enabled, it starts after the first click, key press, or tap. Interaction does not skip the delay. The offer itself is local to the browser; a voice session starts only when the visitor accepts and grants microphone access. Set the delay to `0` or leave it empty to disable auto-call. The embed accepts only the deployment ID; the iframe also requires its companion bridge.
+The deployment can offer an incoming website call after an auto-call delay, require a prior page interaction, play an offer sound, and respect a visitor's decline preferences. Set these options, position, and page-context controls in the deployment editor. The delay starts when the widget loads. If **Require user interaction first** is enabled, it starts after a real click, key press, or tap in the script host page or inside the iframe widget itself. A host-page click cannot unlock an iframe offer. Interaction does not skip the delay. The offer itself is local to the browser; a voice session starts only when the visitor accepts and grants microphone access. Set the delay to `0` or leave it empty to disable auto-call. The embed accepts only the deployment ID; the iframe also requires its companion bridge.
 
 ## Limit widget usage
 
-In the deployment editor, enable **Widget limits** to set a daily admission budget, estimated reservation per conversation, maximum session duration, concurrent conversation count, daily conversation minutes per visitor IP, and allowed HTTPS website origins. These settings apply to both script and iframe widgets. The daily budget is a conservative admission estimate, not an exact cap on the model provider's invoice. The platform checks these limits when a visitor accepts and starts a session, so ringing and declined offers do not reserve usage. Use the actual HTTPS origins of each site that embeds the widget; a denied origin cannot start a conversation.
+In the deployment editor, enable **Widget limits** to set a daily admission budget, estimated reservation per conversation, maximum session duration, concurrent conversation count, daily conversation minutes per visitor IP, and allowed HTTPS website origins. These settings apply to both script and iframe widgets. The daily budget is a conservative admission estimate, not an exact cap on the model provider's invoice. The platform checks these limits when a visitor accepts and starts a session, so ringing and declined offers do not reserve usage. Use the actual HTTPS origins of each site that embeds the widget. Limited iframe widgets also verify the host origin when the iframe loads; a host page that suppresses the `Referer` header entirely cannot embed one. A denied origin cannot load the iframe or start a conversation.
 
 ## Limits and troubleshooting
 
