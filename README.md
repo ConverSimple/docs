@@ -2,7 +2,7 @@
 
 Source for [docs.conversimple.com](https://docs.conversimple.com), built with Mintlify. The documentation is organized by the job a customer is trying to do: add voice to an existing SaaS concierge, embed an agent, connect a phone line, or run Python tools.
 
-The current site content was rewritten against the platform and SDK sources reviewed on 2 October 2026. This branch is a draft; content only reaches the public site when merged into the branch connected to Mintlify.
+The current site content was rewritten against the platform and SDK sources reviewed on 2 October 2026. Content reaches the public site when merged into the branch connected to Mintlify.
 
 ## Preview and checks
 
